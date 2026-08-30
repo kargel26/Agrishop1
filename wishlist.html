@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Wishlist — AgriMart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="wishlist">
+
+<div id="site-header"></div>
+
+<main>
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Wishlist</span></div>
+    <h2 style="font-size:26px;margin-bottom:20px;" id="wishHeading">My Wishlist</h2>
+    <div id="wishRoot"></div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+function initPage(){ renderWishlist(); }
+function onWishlistChanged(){ renderWishlist(); }
+function renderWishlist(){
+  const items = state.wishlistArr;
+  document.getElementById('wishHeading').textContent = 'My Wishlist' + (items.length?` (${items.length})`:'');
+  const root = document.getElementById('wishRoot');
+  root.innerHTML = items.length===0 ? `
+    <div class="empty-state"><div class="ic">♡</div><h3>Your wishlist is empty</h3><p>Save products you love for later.</p><a href="shop.html" class="btn btn-primary" style="margin-top:16px;">Browse Products</a></div>
+  ` : `<div class="product-grid">${items.map(id=>byId(id)).filter(Boolean).map(productCard).join('')}</div>`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — AgriMart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="admin">
+
+<div id="site-header"></div>
+
+<main>
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Admin Dashboard</span></div>
+    <div class="dash-layout">
+      <aside class="dash-side" id="adminMenu"></aside>
+      <div id="adminContent"></div>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+const ADMIN_MENU = ['Dashboard','Users','Sellers','Products','Categories','Orders','Payments','Refunds','Coupons','Reviews','Banners','Reports','Settings'];
+let adminTab = 'dashboard';
+function initPage(){
+  document.getElementById('adminMenu').innerHTML = ADMIN_MENU.map(m=>
+    `<a href="#" data-tab="${m.toLowerCase()}" class="${adminTab===m.toLowerCase()?'active':''}" onclick="setAdminTab('${m.toLowerCase()}');return false;">${m}</a>`).join('');
+  renderAdminContent();
+}
+function setAdminTab(t){
+  adminTab = t;
+  document.querySelectorAll('#adminMenu a').forEach(a=>a.classList.toggle('active', a.dataset.tab===t));
+  renderAdminContent();
+}
+function renderAdminContent(){
+  document.getElementById('adminContent').innerHTML = adminContent();
+}
+function adminContent(){
+  if(adminTab==='orders' || adminTab==='payments' || adminTab==='refunds'){
+    const rows = state.orders;
+    return `
+    <div class="panel-card">
+      <h3>${adminTab.charAt(0).toUpperCase()+adminTab.slice(1)}</h3>
+      ${rows.length===0?`<p class="muted">No orders placed yet. Orders will appear here after a customer completes checkout.</p>`:`
+      <table class="data-table">
+        <tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Amount</th><th>Payment</th><th>Status</th></tr>
+        ${rows.map(o=>`<tr><td>${o.id}</td><td>${new Date(o.date).toLocaleDateString()}</td><td>${o.address.name}</td><td>${fmt(o.totals.total)}</td><td>${o.paymentStatus}</td><td><span class="status-chip chip-${o.status.toLowerCase().replace(/ /g,'-')}">${o.status}</span></td></tr>`).join('')}
+      </table>`}
+    </div>`;
+  }
+  if(adminTab==='products' || adminTab==='categories'){
+    return `
+    <div class="panel-card">
+      <h3>${adminTab==='products'?'All Products':'Categories'}</h3>
+      <table class="data-table">
+        ${adminTab==='products'?`
+        <tr><th>Product</th><th>Category</th><th>Seller</th><th>Price</th><th>Stock</th><th>Status</th></tr>
+        ${PRODUCTS.map(p=>`<tr><td>${p.name}</td><td>${p.category}</td><td>${sellerName(p.seller)}</td><td>${fmt(p.price)}</td><td>${p.stock}</td><td><span class="status-chip ${p.stock>0?'chip-delivered':'chip-cancelled'}">${p.stock>0?'Active':'Out of Stock'}</span></td></tr>`).join('')}
+        `:`
+        <tr><th>Category</th><th>Products</th></tr>
+        ${CATEGORIES.map(c=>`<tr><td>${c.icon} ${c.name}</td><td>${c.count}</td></tr>`).join('')}
+        `}
+      </table>
+    </div>`;
+  }
+  if(adminTab==='users' || adminTab==='sellers'){
+    return `
+    <div class="panel-card">
+      <h3>${adminTab==='sellers'?'Sellers':'Users'}</h3>
+      <table class="data-table">
+        ${adminTab==='sellers'?`
+        <tr><th>Seller</th><th>Location</th><th>Rating</th><th>Products</th><th>Status</th></tr>
+        ${SELLERS.map(s=>`<tr><td>${s.name}</td><td>${s.location}</td><td>${s.rating}</td><td>${s.products}</td><td><span class="status-chip chip-delivered">Verified</span></td></tr>`).join('')}
+        `:`
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
+        <tr><td>Ramesh Yadav</td><td>ramesh@example.com</td><td>Customer</td><td>Jan 2026</td></tr>
+        <tr><td>Sunita Devi</td><td>sunita@example.com</td><td>Customer</td><td>Feb 2026</td></tr>
+        <tr><td>Manpreet Singh</td><td>manpreet@example.com</td><td>Customer</td><td>Mar 2026</td></tr>
+        `}
+      </table>
+    </div>`;
+  }
+  if(adminTab==='coupons'){
+    return `<div class="panel-card"><h3>Coupons</h3><table class="data-table"><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Status</th></tr>
+    ${Object.entries(COUPONS).map(([k,c])=>`<tr><td>${k}</td><td>${c.type}</td><td>${c.type==='percent'?c.value+'%':fmt(c.value)}</td><td>${fmt(c.min)}</td><td><span class="status-chip chip-delivered">Active</span></td></tr>`).join('')}
+    </table></div>`;
+  }
+  if(adminTab==='reviews'){
+    return `<div class="panel-card"><h3>Reviews</h3>${REVIEWS_HOME.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--line);"><b>${r.name}</b> — <span class="stars">${stars(r.rating)}</span><p class="muted" style="font-size:13px;">${r.text}</p></div>`).join('')}</div>`;
+  }
+  if(adminTab==='banners'){
+    return `<div class="panel-card"><h3>Homepage Banners</h3><p class="muted">Manage hero banners and promotional offer sections shown on the homepage.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+      <div class="offer-banner offer-1" style="min-height:100px;"><h3 style="font-size:16px;">Save Up to 30%</h3></div>
+      <div class="offer-banner offer-2" style="min-height:100px;"><h3 style="font-size:16px;">Organic Essentials</h3></div>
+    </div></div>`;
+  }
+  if(adminTab==='settings'){
+    return `<div class="panel-card"><h3>Website Settings</h3>
+    <div class="form-grid">
+      <div class="form-field"><label>Site Name</label><input value="AgriMart"></div>
+      <div class="form-field"><label>Support Email</label><input value="${CONTACT.email}"></div>
+      <div class="form-field"><label>Delivery Threshold (Free Delivery)</label><input value="999"></div>
+      <div class="form-field"><label>Default Tax Rate (%)</label><input value="5"></div>
+    </div>
+    <button class="btn btn-primary btn-sm" style="margin-top:16px;" onclick="toast('Settings saved.')">Save Settings</button>
+    </div>`;
+  }
+  if(adminTab==='reports'){
+    return `<div class="panel-card"><h3>Sales Reports</h3><p class="muted">Export detailed sales, revenue and inventory reports.</p>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="toast('Generating sales report…')">Export Sales Report</button>
+      <button class="btn btn-outline btn-sm" onclick="toast('Generating inventory report…')">Export Inventory Report</button>
+    </div></div>`;
+  }
+  const orders = state.orders;
+  const totalRevenue = orders.reduce((a,o)=>a+o.totals.total,0);
+  const lowStock = PRODUCTS.filter(p=>p.stock>0 && p.stock<15).length;
+  return `
+  <div class="stat-grid">
+    <div class="stat-card"><div class="top"><div class="ic">👥</div></div><div class="val">4,821</div><div class="lbl">Total Users</div><div class="delta up">▲ 6.2% this month</div></div>
+    <div class="stat-card"><div class="top"><div class="ic">🏪</div></div><div class="val">${SELLERS.length}</div><div class="lbl">Total Sellers</div><div class="delta up">▲ 2 new this week</div></div>
+    <div class="stat-card"><div class="top"><div class="ic">📦</div></div><div class="val">${PRODUCTS.length}</div><div class="lbl">Total Products</div><div class="delta up">▲ 12 added</div></div>
+    <div class="stat-card"><div class="top"><div class="ic">🧾</div></div><div class="val">${orders.length}</div><div class="lbl">Total Orders (this browser)</div></div>
+    <div class="stat-card"><div class="top"><div class="ic">📅</div></div><div class="val">${orders.length}</div><div class="lbl">Today's Orders</div></div>
+    <div class="stat-card"><div class="top"><div class="ic">💰</div></div><div class="val">${fmt(totalRevenue)}</div><div class="lbl">Total Revenue</div></div>
+    <div class="stat-card"><div class="top"><div class="ic">⏳</div></div><div class="val">${orders.filter(o=>o.status!=='Delivered'&&o.status!=='Cancelled').length}</div><div class="lbl">Pending Orders</div></div>
+    <div class="stat-card"><div class="top"><div class="ic">⚠️</div></div><div class="val">${lowStock}</div><div class="lbl">Low Stock Products</div><div class="delta down">Needs attention</div></div>
+  </div>
+  <div class="panel-card mt24">
+    <h3>Sales Over Time (Last 7 Days)</h3>
+    ${barsChart([12000,15400,11200,18900,21400,17600,23100],['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])}
+  </div>
+  <div class="panel-card">
+    <h3>Category Performance</h3>
+    ${barsChart(CATEGORIES.map(c=>c.count), CATEGORIES.map(c=>c.name.split(' ')[0]))}
+  </div>
+  <div class="panel-card">
+    <h3>Top Selling Products</h3>
+    <table class="data-table"><tr><th>Product</th><th>Category</th><th>Reviews</th><th>Rating</th><th>Price</th></tr>
+    ${[...PRODUCTS].sort((a,b)=>b.reviews-a.reviews).slice(0,5).map(p=>`<tr><td>${p.name}</td><td>${p.category}</td><td>${p.reviews}</td><td>${p.rating} ★</td><td>${fmt(p.price)}</td></tr>`).join('')}
+    </table>
+  </div>`;
+}
+</script>
+</body>
+</html>

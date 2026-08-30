@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shipping Policy — AgriMart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="policy">
+
+<div id="site-header"></div>
+
+<main>
+  <div class="container" style="max-width:760px;">
+    <div class="breadcrumb"><a href="../index.html">Home</a><span class="sep">/</span><span class="cur">Shipping Policy</span></div>
+    <h2 style="font-size:28px;margin-bottom:16px;">Shipping Policy</h2>
+    <div class="panel-card">
+      <p style="font-size:13.5px;line-height:1.9;color:var(--ink-soft);">This is placeholder policy content for the AgriMart demo. In production, this page would contain your organization's complete, legally-reviewed Shipping Policy covering data handling, order eligibility, timelines and customer rights in accordance with applicable Indian e-commerce and consumer protection regulations. For questions, contact us at <span id="policyContact"></span>.</p>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script>const SITE_BASE = "../";</script>
+<script src="../assets/data.js"></script>
+<script src="../assets/common.js"></script>
+<script>
+function initPage(){
+  document.getElementById('policyContact').textContent = CONTACT.phone + ' or ' + CONTACT.email;
+}
+</script>
+</body>
+</html>

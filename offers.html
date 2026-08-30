@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Special Offers — AgriMart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="offers">
+
+<div id="site-header"></div>
+
+<main>
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Offers</span></div>
+    <h2 style="font-size:28px;margin-bottom:20px;">Special Offers</h2>
+    <div class="offer-grid">
+      <div class="offer-banner offer-1"><h3>Save Up to 30% on Farming Essentials</h3><p>Quality seeds, fertilizers and tools at unbeatable prices.</p><a href="shop.html" class="btn btn-accent">Shop the Sale</a></div>
+      <div class="offer-banner offer-2"><h3>Organic Farming Essentials</h3><p>Certified organic inputs for sustainable farming.</p><a href="shop.html" class="btn btn-accent">Explore Organic</a></div>
+    </div>
+    <div class="section-head mt24"><div><h2 style="font-size:22px;">Discounted Products</h2></div></div>
+    <div class="product-grid" id="discountGrid"></div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+function initPage(){
+  document.getElementById('discountGrid').innerHTML = [...PRODUCTS]
+    .sort((a,b)=>(b.mrp-b.price)/b.mrp - (a.mrp-a.price)/a.mrp)
+    .slice(0,8).map(productCard).join('');
+}
+</script>
+</body>
+</html>

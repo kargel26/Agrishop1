@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact & Support — AgriMart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="contact">
+
+<div id="site-header"></div>
+
+<main>
+  <div class="container" style="max-width:900px;">
+    <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Contact</span></div>
+    <h2 style="font-size:28px;margin-bottom:6px;">Contact &amp; Support</h2>
+    <p class="muted" style="margin-bottom:26px;">We're here to help with orders, products, or seller queries.</p>
+    <div class="cart-layout" style="grid-template-columns:1fr 1fr;">
+      <div class="panel-card" style="margin:0;">
+        <h3>Send us a message</h3>
+        <div class="form-grid">
+          <div class="form-field"><label>Your Name</label><input placeholder="Full name"></div>
+          <div class="form-field"><label>Mobile / Email</label><input placeholder="Contact detail"></div>
+          <div class="form-field full"><label>Subject</label><input placeholder="How can we help?"></div>
+          <div class="form-field full"><label>Message</label><textarea rows="4" placeholder="Describe your query…"></textarea></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:14px;" onclick="submitContact(event)">Send Message</button>
+      </div>
+      <div>
+        <div class="panel-card">
+          <h3>Get in Touch</h3>
+          <p id="contactDetails" style="font-size:13.5px;line-height:2;"></p>
+        </div>
+        <div class="panel-card">
+          <h3>Frequently Asked Questions</h3>
+          <div style="font-size:13.5px;">
+            <p style="margin-bottom:10px;"><b>How long does delivery take?</b><br><span class="muted">Typically 3–5 business days depending on your location.</span></p>
+            <p style="margin-bottom:10px;"><b>What payment methods are accepted?</b><br><span class="muted">UPI, credit/debit cards, net banking and wallets via Razorpay.</span></p>
+            <p><b>How do I become a seller?</b><br><span class="muted">Visit the Seller Dashboard and complete the verification process.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+function initPage(){
+  document.getElementById('contactDetails').innerHTML =
+    `📞 ${CONTACT.phone}<br>✉️ ${CONTACT.email}<br>📍 ${CONTACT.address}<br>🕒 Mon–Sat, 9:00 AM – 7:00 PM`;
+}
+function submitContact(e){ e.preventDefault(); toast('Message sent! Our team will respond within 24 hours.'); }
+</script>
+</body>
+</html>

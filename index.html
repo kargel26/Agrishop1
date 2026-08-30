@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriMart — Agricultural Products Marketplace</title>
+<meta name="description" content="AgriMart is India's trusted online marketplace for seeds, fertilizers, crop protection, tools, irrigation and more — delivered from verified sellers to your farm gate.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="home">
+
+<div id="site-header"></div>
+
+<main>
+  <section class="hero">
+    <div class="container hero-inner">
+      <div>
+        <span class="hero-eyebrow">🌾 India's Trusted Agri Marketplace</span>
+        <h1>Everything You Need for <em>Better Farming</em></h1>
+        <p class="sub">Buy quality seeds, fertilizers, tools and machinery from verified sellers at competitive prices — delivered straight to your farm gate.</p>
+        <div class="hero-btns">
+          <a href="shop.html" class="btn btn-accent">Shop Now</a>
+          <a href="shop.html" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,.5)">Explore Categories</a>
+        </div>
+        <div class="hero-stats">
+          <div><b>12,000+</b><span>Products Listed</span></div>
+          <div><b>40,000+</b><span>Happy Farmers</span></div>
+          <div><b>500+</b><span>Verified Sellers</span></div>
+          <div><b>4.7★</b><span>Average Rating</span></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=1200&auto=format&fit=crop" alt="Farmer in green field at sunrise">
+        <div class="float-card">
+          <span class="dot"></span>
+          <div><b>Order confirmed</b><span>Rice Seeds • Delivering to Patna, Bihar</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad">
+    <div class="container">
+      <div class="section-head"><div><span class="eyebrow">Browse</span><h2>Shop by Category</h2></div></div>
+      <div class="cat-grid" id="catGrid"></div>
+    </div>
+  </section>
+
+  <section class="pad bg-alt">
+    <div class="container">
+      <div class="section-head">
+        <div><span class="eyebrow">Handpicked</span><h2>Featured Products</h2><p>Quality-checked products, most loved by farmers this season.</p></div>
+        <a href="shop.html" class="link-more">View All →</a>
+      </div>
+      <div class="product-grid" id="featuredGrid"></div>
+    </div>
+  </section>
+
+  <section class="pad">
+    <div class="container">
+      <div class="section-head">
+        <div><span class="eyebrow">Loved by farmers</span><h2>Best Sellers</h2></div>
+        <a href="shop.html" class="link-more">View All →</a>
+      </div>
+      <div class="product-grid" id="bestGrid"></div>
+    </div>
+  </section>
+
+  <section class="pad bg-alt">
+    <div class="container">
+      <div class="section-head"><div><span class="eyebrow">Limited Time</span><h2>Special Offers</h2></div></div>
+      <div class="offer-grid">
+        <div class="offer-banner offer-1">
+          <h3>Save Up to 30% on Farming Essentials</h3>
+          <p>Quality seeds, fertilizers and tools at unbeatable prices — this week only.</p>
+          <a href="shop.html" class="btn btn-accent">Shop the Sale</a>
+        </div>
+        <div class="offer-banner offer-2">
+          <h3>Organic Farming Essentials</h3>
+          <p>Certified organic inputs for sustainable, chemical-free farming.</p>
+          <a href="shop.html" class="btn btn-accent">Explore Organic</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad">
+    <div class="container">
+      <div class="section-head"><div><span class="eyebrow">Verified Partners</span><h2>Trusted Sellers</h2></div></div>
+      <div class="seller-grid" id="sellerGrid"></div>
+    </div>
+  </section>
+
+  <section class="pad bg-alt">
+    <div class="container">
+      <div class="section-head"><div><span class="eyebrow">Why AgriMart</span><h2>Why Choose Us</h2></div></div>
+      <div class="why-grid">
+        <div class="why-card"><div class="ic">✅</div><h4>Verified Products</h4></div>
+        <div class="why-card"><div class="ic">🔒</div><h4>Secure Payments</h4></div>
+        <div class="why-card"><div class="ic">🚚</div><h4>Fast Delivery</h4></div>
+        <div class="why-card"><div class="ic">🛡️</div><h4>Trusted Sellers</h4></div>
+        <div class="why-card"><div class="ic">↩️</div><h4>Easy Returns</h4></div>
+        <div class="why-card"><div class="ic">🎧</div><h4>Customer Support</h4></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pad">
+    <div class="container">
+      <div class="section-head"><div><span class="eyebrow">Testimonials</span><h2>What Farmers Say</h2></div></div>
+      <div class="review-grid" id="reviewGrid"></div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+function initPage(){
+  document.getElementById('catGrid').innerHTML = CATEGORIES.map(c=>`
+    <a href="shop.html?category=${c.id}" class="cat-card">
+      <div class="ic">${c.icon}</div><h4>${c.name}</h4><span>${c.count} products</span>
+    </a>`).join('');
+  document.getElementById('featuredGrid').innerHTML = PRODUCTS.slice(0,8).map(productCard).join('');
+  document.getElementById('bestGrid').innerHTML = [...PRODUCTS].sort((a,b)=>b.reviews-a.reviews).slice(0,4).map(productCard).join('');
+  document.getElementById('sellerGrid').innerHTML = SELLERS.map(s=>`
+    <div class="seller-card">
+      <div class="avatar">${s.name.charAt(0)}</div>
+      <h4>${s.name}</h4>
+      <span class="muted" style="font-size:12px">${s.location}</span>
+      <div class="verified">✓ Verified Seller</div>
+      <div style="margin-top:8px;font-size:12px" class="muted">${stars(s.rating)} ${s.rating} · ${s.products} products</div>
+    </div>`).join('');
+  document.getElementById('reviewGrid').innerHTML = REVIEWS_HOME.map(r=>`
+    <div class="review-card">
+      <div class="stars">${stars(r.rating)}</div>
+      <p class="txt">"${r.text}"</p>
+      <div class="who"><div class="av">${r.name.charAt(0)}</div><div><b>${r.name}</b><span>${r.loc}</span></div></div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
