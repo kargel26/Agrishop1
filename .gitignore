@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build artifacts (keep assets/speed-insights.js as it's the distributed bundle)
+# We don't want to ignore assets/speed-insights.js since it's needed for the site to work
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
