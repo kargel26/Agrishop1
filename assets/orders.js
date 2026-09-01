@@ -31,17 +31,26 @@
     const ids = Object.keys(cart);
     if (!ids.length) throw new Error('Your cart is empty.');
 
+    // The UI intentionally keeps legacy ids such as p3 for compatibility.
+    // Supabase order_items.product_id is UUID, so translate every cart id to dbId.
+    await (window.AgriCatalog?.ready || Promise.resolve());
+    const selectedProducts = ids.map(id => byId(id)).filter(Boolean);
+    if (selectedProducts.length !== ids.length) throw new Error('One or more cart products could not be loaded. Please refresh the page.');
+    const dbIds = selectedProducts.map(p => p.dbId).filter(Boolean);
+    if (dbIds.length !== ids.length) throw new Error('A cart product is missing its database ID. Please refresh the page.');
+
     const { data: products, error: productError } = await window.agriSupabase
       .from('products')
       .select('id,name,price,stock,seller_id,is_active')
-      .in('id', ids);
+      .in('id', dbIds);
     if (productError) throw productError;
-    const byProduct = Object.fromEntries((products || []).map(p => [p.id, p]));
+    const byDbId = Object.fromEntries((products || []).map(p => [p.id, p]));
 
     const items = [];
     let subtotal = 0;
     for (const id of ids) {
-      const p = byProduct[id];
+      const uiProduct = byId(id);
+      const p = byDbId[uiProduct.dbId];
       const qty = Number(cart[id]);
       if (!p || !p.is_active) throw new Error('A product in your cart is no longer available.');
       if (!Number.isInteger(qty) || qty < 1 || qty > p.stock) throw new Error(`${p.name} has insufficient stock.`);
@@ -76,9 +85,11 @@
       throw itemsError;
     }
 
-    const { error: clearError } = await window.agriSupabase
-      .from('cart_items').delete().eq('cart_id', (await window.agriSupabase.from('carts').select('id').eq('user_id', user.id).single()).data?.id);
-    if (clearError) console.warn('Cart cleanup failed:', clearError);
+    const { data: cartRow } = await window.agriSupabase.from('carts').select('id').eq('user_id', user.id).maybeSingle();
+    if (cartRow?.id) {
+      const { error: clearError } = await window.agriSupabase.from('cart_items').delete().eq('cart_id', cartRow.id);
+      if (clearError) console.warn('Cart cleanup failed:', clearError);
+    }
 
     return { order, orderItems: items };
   }
