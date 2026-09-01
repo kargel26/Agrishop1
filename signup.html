@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account — AgriMart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="account">
+<div id="site-header"></div>
+<main>
+  <div class="container">
+    <div class="auth-wrap">
+      <h2 style="text-align:center;margin-bottom:6px;">Create your AgriMart account</h2>
+      <p class="muted center" style="font-size:13px;margin-bottom:22px;">Shop agricultural products with your own account.</p>
+      <div class="form-field full" style="margin-bottom:12px;"><label>Full Name</label><input id="signupName" autocomplete="name" placeholder="Your full name"></div>
+      <div class="form-field full" style="margin-bottom:12px;"><label>Phone (optional)</label><input id="signupPhone" autocomplete="tel" placeholder="10-digit mobile number"></div>
+      <div class="form-field full" style="margin-bottom:12px;"><label>Email</label><input id="signupEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
+      <div class="form-field full" style="margin-bottom:18px;"><label>Password</label><input id="signupPass" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
+      <button class="btn btn-primary btn-block" id="signupBtn" onclick="doSignup()">Create Account</button>
+      <p id="signupMessage" class="muted center" style="font-size:12px;margin-top:14px;"></p>
+      <p class="center" style="font-size:13px;margin-top:18px;">Already have an account? <a href="login.html">Sign in</a></p>
+    </div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/auth.js"></script>
+<script>async function initPage(){}
+async function doSignup(){
+  const name=document.getElementById('signupName').value.trim();
+  const phone=document.getElementById('signupPhone').value.trim();
+  const email=document.getElementById('signupEmail').value.trim();
+  const password=document.getElementById('signupPass').value;
+  const msg=document.getElementById('signupMessage');
+  const btn=document.getElementById('signupBtn');
+  if(!name || !email || !password){ msg.textContent='Please fill name, email and password.'; return; }
+  if(password.length < 6){ msg.textContent='Password must be at least 6 characters.'; return; }
+  btn.disabled=true; btn.textContent='Creating account…'; msg.textContent='';
+  try{
+    const data=await AgriAuth.signUp(email,password,name,phone);
+    if(data.session){
+      toast('Account created successfully');
+      window.location.href='index.html';
+    }else{
+      msg.textContent='Account created. Check your email to confirm your address, then sign in.';
+    }
+  }catch(e){ msg.textContent=e.message || 'Unable to create account.'; }
+  finally{ btn.disabled=false; btn.textContent='Create Account'; }
+}</script>
+</body>
+</html>
