@@ -18,29 +18,31 @@
   }
 
   async function resolveProducts(ids) {
-    await (window.AgriCatalog?.ready || Promise.resolve());
     const selected = ids.map(id => byId(id)).filter(Boolean);
-    if (selected.length !== ids.length) throw new Error('One or more cart products could not be loaded. Please refresh the page.');
-
-    // Normal path: catalog-v2 attaches the real Supabase UUID as dbId.
-    const direct = selected.filter(p => p.dbId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(p.dbId)));
-    const resolved = Object.create(null);
-    direct.forEach(p => { resolved[p.id] = p.dbId; });
-
-    // Fallback path: older carts may contain p1..p12 objects without dbId.
-    // Resolve them by the immutable product name in Supabase, avoiding any
-    // attempt to insert a legacy id such as "p3" into a UUID column.
-    const unresolved = selected.filter(p => !resolved[p.id]);
-    if (unresolved.length) {
-      const names = unresolved.map(p => p.name);
-      const { data, error } = await window.agriSupabase.from('products').select('id,name').in('name', names);
-      if (error) throw error;
-      const byName = Object.fromEntries((data || []).map(p => [p.name, p.id]));
-      unresolved.forEach(p => { if (byName[p.name]) resolved[p.id] = byName[p.name]; });
+    if (selected.length !== ids.length) {
+      throw new Error('One or more cart products could not be loaded. Please refresh the page.');
     }
 
+    // Do not trust the browser catalog/cache for database identity. Always
+    // resolve the cart items against the authoritative Supabase products table.
+    // This also handles legacy carts containing IDs such as p1, p2, p3.
+    const names = selected.map(p => p.name);
+    const { data, error } = await window.agriSupabase
+      .from('products')
+      .select('id,name')
+      .in('name', names);
+    if (error) throw error;
+
+    const byName = Object.fromEntries((data || []).map(p => [p.name, p.id]));
+    const resolved = Object.create(null);
+    selected.forEach(p => {
+      if (byName[p.name]) resolved[p.id] = byName[p.name];
+    });
+
     const missing = selected.filter(p => !resolved[p.id]);
-    if (missing.length) throw new Error('Could not match cart product(s) with the product database. Please remove the old cart items, add them again, and retry.');
+    if (missing.length) {
+      throw new Error('Could not find '+missing.length+' cart product(s) in the database. Please remove those items and add them again.');
+    }
     return { selected, resolved };
   }
 
@@ -54,10 +56,12 @@
     const { selected, resolved } = await resolveProducts(ids);
     const dbIds = ids.map(id => resolved[id]);
     const { data: products, error: productError } = await window.agriSupabase
-      .from('products').select('id,name,price,stock,seller_id,is_active').in('id', dbIds);
+      .from('products')
+      .select('id,name,price,stock,seller_id,is_active')
+      .in('id', dbIds);
     if (productError) throw productError;
-    const byDbId = Object.fromEntries((products || []).map(p => [p.id, p]));
 
+    const byDbId = Object.fromEntries((products || []).map(p => [p.id, p]));
     const items = [];
     let subtotal = 0;
     for (const id of ids) {
@@ -86,7 +90,9 @@
     }).select().single();
     if (orderError) throw orderError;
 
-    const { error: itemsError } = await window.agriSupabase.from('order_items').insert(items.map(x => ({ ...x, order_id: order.id })));
+    const { error: itemsError } = await window.agriSupabase.from('order_items').insert(
+      items.map(x => ({ ...x, order_id: order.id }))
+    );
     if (itemsError) {
       await window.agriSupabase.from('orders').delete().eq('id', order.id);
       throw itemsError;
