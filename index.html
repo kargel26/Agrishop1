@@ -23,6 +23,20 @@
 <section class="pad bg-alt"><div class="container"><div class="panel-card seller-cta-card" style="text-align:center;max-width:900px;margin:auto"><span class="eyebrow">Grow with AgriMart</span><h2>Sell Your Agricultural Products</h2><p class="muted">Join AgriMart as a verified seller. Submit your business details, wait for admin approval, then manage products, orders and payments from your Seller Dashboard.</p><div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:18px"><a href="seller-verification.html" class="btn btn-primary">🚜 Become a Seller</a><a href="seller-login.html" class="btn btn-outline">Seller Login</a></div></div></div></section>
 </main>
 <div id="site-footer"></div>
-<script src="assets/data.js"></script><script src="assets/common.js"></script>
-<script>function initPage(){document.getElementById('catGrid').innerHTML=CATEGORIES.map(c=>`<a href="shop.html?category=${c.id}" class="cat-card"><div class="ic">${c.icon}</div><h4>${c.name}</h4><span>${c.count} products</span></a>`).join('');document.getElementById('featuredGrid').innerHTML=PRODUCTS.slice(0,8).map(productCard).join('');document.getElementById('bestGrid').innerHTML=[...PRODUCTS].sort((a,b)=>b.reviews-a.reviews).slice(0,4).map(productCard).join('');document.getElementById('sellerGrid').innerHTML=SELLERS.map(s=>`<div class="seller-card"><div class="avatar">${s.name.charAt(0)}</div><h4>${s.name}</h4><span class="muted" style="font-size:12px">${s.location}</span><div class="verified">✓ Verified Seller</div><div style="margin-top:8px;font-size:12px" class="muted">${stars(s.rating)} ${s.rating} · ${s.products} products</div></div>`).join('');document.getElementById('reviewGrid').innerHTML=REVIEWS_HOME.map(r=>`<div class="review-card"><div class="stars">${stars(r.rating)}</div><p class="txt">"${r.text}"</p><div class="who"><div class="av">${r.name.charAt(0)}</div><div><b>${r.name}</b><span>${r.loc}</span></div></div></div>`).join('');}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/data.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/catalog-v2.js"></script>
+<script src="assets/common.js"></script>
+<script>
+async function initPage(){
+  try{ await window.AgriCatalog.ready; }catch(e){ console.error('Homepage catalog load failed:',e); }
+  const products=(window.AGRI_PRODUCTS&&window.AGRI_PRODUCTS.length)?window.AGRI_PRODUCTS:PRODUCTS;
+  document.getElementById('catGrid').innerHTML=CATEGORIES.map(c=>`<a href="shop.html?category=${c.id}" class="cat-card"><div class="ic">${c.icon}</div><h4>${c.name}</h4><span>${c.count} products</span></a>`).join('');
+  document.getElementById('featuredGrid').innerHTML=products.slice(0,8).map(productCard).join('');
+  document.getElementById('bestGrid').innerHTML=[...products].sort((a,b)=>b.reviews-a.reviews).slice(0,4).map(productCard).join('');
+  document.getElementById('sellerGrid').innerHTML=SELLERS.map(s=>`<div class="seller-card"><div class="avatar">${s.name.charAt(0)}</div><h4>${s.name}</h4><span class="muted" style="font-size:12px">${s.location}</span><div class="verified">✓ Verified Seller</div><div style="margin-top:8px;font-size:12px" class="muted">${stars(s.rating)} ${s.rating} · ${s.products} products</div></div>`).join('');
+  document.getElementById('reviewGrid').innerHTML=REVIEWS_HOME.map(r=>`<div class="review-card"><div class="stars">${stars(r.rating)}</div><p class="txt">"${r.text}"</p><div class="who"><div class="av">${r.name.charAt(0)}</div><div><b>${r.name}</b><span>${r.loc}</span></div></div></div>`).join('');
+}
+</script>
 </body></html>
