@@ -1,6 +1,9 @@
 const Razorpay = require('razorpay');
 const { createClient } = require('@supabase/supabase-js');
 
+const SUPABASE_URL = 'https://ggrypjuwwmiisgtgpozj.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_u12UwcUj8vGHAdo-Lex5kg_ve7PzPxh';
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
@@ -8,13 +11,13 @@ module.exports = async function handler(req, res) {
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ error: 'Authentication required' });
 
-    // Preserve the caller's Supabase JWT for all database queries so RLS
-    // evaluates auth.uid() as the signed-in customer, not as anon.
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY,
-      { global: { headers: { Authorization: `Bearer ${token}` } } }
-    );
+    // Use the same Supabase project as the frontend. A service-role key is
+    // preferred on the server so payment initialization is not blocked by RLS;
+    // ownership is still checked explicitly against the authenticated user.
+    const dbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_PUBLISHABLE_KEY;
+    const supabase = createClient(SUPABASE_URL, dbKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } }
+    });
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) return res.status(401).json({ error: 'Invalid session' });
 
@@ -25,9 +28,12 @@ module.exports = async function handler(req, res) {
       .from('orders')
       .select('id,order_number,total,status,user_id')
       .eq('id', orderId)
-      .eq('user_id', user.id)
-      .single();
-    if (orderError || !order) return res.status(404).json({ error: 'Order not found' });
+      .maybeSingle();
+    if (orderError) {
+      console.error('Order lookup error:', orderError);
+      return res.status(500).json({ error: 'Could not load order' });
+    }
+    if (!order || order.user_id !== user.id) return res.status(404).json({ error: 'Order not found' });
     if (!['pending','confirmed'].includes(order.status)) return res.status(400).json({ error: 'Order is not payable' });
 
     const amount = Math.round(Number(order.total) * 100);
