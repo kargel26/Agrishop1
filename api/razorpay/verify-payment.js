@@ -8,14 +8,25 @@ module.exports = async function handler(req, res) {
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ error: 'Authentication required' });
 
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    // Preserve the caller's Supabase JWT for all database queries so RLS
+    // evaluates auth.uid() as the signed-in customer, not as anon.
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_ANON_KEY,
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
+    );
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) return res.status(401).json({ error: 'Invalid session' });
 
     const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
     if (!orderId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) return res.status(400).json({ error: 'Incomplete payment details' });
 
-    const { data: payment, error: paymentError } = await supabase.from('payments').select('id,order_id,user_id,amount,razorpay_order_id,status').eq('order_id', orderId).eq('user_id', user.id).single();
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .select('id,order_id,user_id,amount,razorpay_order_id,status')
+      .eq('order_id', orderId)
+      .eq('user_id', user.id)
+      .single();
     if (paymentError || !payment) return res.status(404).json({ error: 'Payment record not found' });
     if (payment.razorpay_order_id !== razorpay_order_id) return res.status(400).json({ error: 'Payment order mismatch' });
 
