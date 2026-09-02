@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agriculture Product Categories | Seeds, Fertilizers, Tools & Farming Supplies | AgriMart</title>
+<meta name="description" content="Explore AgriMart agriculture product categories including seeds, fertilizers, crop protection, farming tools, irrigation, machinery, organic products and gardening supplies.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://agrishop1.vercel.app/categories.html">
+<meta property="og:title" content="Agriculture Product Categories | AgriMart">
+<meta property="og:description" content="Explore farming and agriculture product categories on AgriMart.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://agrishop1.vercel.app/categories.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.category-page{padding:24px 0 56px}.category-hero{padding:20px 0 28px}.category-hero h1{font-size:clamp(30px,5vw,46px);line-height:1.1;color:#173b2b;margin:0 0 10px}.category-hero p{max-width:780px;color:#667267;line-height:1.7;margin:0}.category-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}.category-card{display:flex;flex-direction:column;min-height:205px;padding:22px;border:1px solid #dfe6dc;border-radius:20px;background:#fff;color:#182018;text-decoration:none;box-shadow:0 7px 24px rgba(23,59,43,.06);transition:.18s ease}.category-card:hover{transform:translateY(-3px);border-color:#2c6a47;box-shadow:0 12px 30px rgba(23,59,43,.11)}.category-icon{font-size:38px;margin-bottom:14px}.category-card h2{font-size:20px;color:#173b2b;margin:0 0 7px}.category-card p{font-size:13px;line-height:1.55;color:#667267;margin:0}.category-count{margin-top:auto;padding-top:16px;font-size:13px;font-weight:800;color:#2c6a47}.category-info{margin-top:28px;padding:22px;border-radius:20px;background:#f4f7f1;border:1px solid #dfe6dc}.category-info h2{margin:0 0 9px;color:#173b2b;font-size:23px}.category-info p{margin:0;color:#4f5d52;line-height:1.75}@media(max-width:1000px){.category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.category-page{padding-top:14px}.category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.category-card{min-height:175px;padding:16px;border-radius:16px}.category-icon{font-size:30px}.category-card h2{font-size:17px}.category-card p{font-size:12px}.category-count{font-size:12px}}@media(max-width:420px){.category-grid{grid-template-columns:1fr 1fr}.category-card{min-height:165px;padding:14px}}
+</style>
+</head>
+<body data-page="categories">
+<div id="site-header"></div>
+<main class="category-page">
+<div class="container">
+<div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Categories</span></div>
+<section class="category-hero">
+<span class="eyebrow">Browse Agriculture Products</span>
+<h1>Shop by Category</h1>
+<p>Find seeds, fertilizers, crop protection products, farming tools, irrigation systems, machinery, organic inputs and gardening supplies in one organized marketplace.</p>
+</section>
+<section aria-labelledby="category-list-title">
+<h2 id="category-list-title" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Agriculture Product Categories</h2>
+<div class="category-grid" id="categoryGrid"></div>
+</section>
+<section class="category-info">
+<h2>Everything you need for better farming</h2>
+<p>AgriMart brings essential agricultural products together so farmers can compare categories, discover products from sellers and continue directly to the relevant product listings.</p>
+</section>
+</div>
+</main>
+<div id="site-footer"></div>
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+const CATEGORY_DESC={
+ seeds:'Certified and hybrid crop seeds for field crops, vegetables and kitchen gardens.',
+ fertilizers:'NPK, organic manure and other crop nutrition products for healthier soil and crops.',
+ 'crop-protection':'Crop protection and botanical products for responsible pest and disease management.',
+ tools:'Hand tools and practical farming equipment for sowing, weeding, cultivation and maintenance.',
+ irrigation:'Drip and water-management products designed to improve irrigation efficiency.',
+ machinery:'Farm machinery and powered equipment for larger and more efficient operations.',
+ organic:'Organic inputs, soil conditioners and natural farming essentials.',
+ gardening:'Seeds, tools and supplies for home gardens, nurseries and small growing spaces.'
+};
+function initPage(){
+ const root=document.getElementById('categoryGrid');
+ root.innerHTML=CATEGORIES.map(c=>`<a class="category-card" href="shop.html?category=${encodeURIComponent(c.id)}" aria-label="Browse ${c.name} products"><div class="category-icon" aria-hidden="true">${c.icon}</div><h2>${c.name}</h2><p>${CATEGORY_DESC[c.id]||'Explore agricultural products in this category.'}</p><span class="category-count">Browse ${c.count} products →</span></a>`).join('');
+ const data={"@context":"https://schema.org","@type":"CollectionPage","name":"Agriculture Product Categories","description":"Agriculture product categories on AgriMart.","url":location.href,"mainEntity":{"@type":"ItemList","itemListElement":CATEGORIES.map((c,i)=>({"@type":"ListItem","position":i+1,"name":c.name,"url":location.origin+'/shop.html?category='+encodeURIComponent(c.id)}))}};
+ const script=document.createElement('script');script.type='application/ld+json';script.textContent=JSON.stringify(data);document.head.appendChild(script);
+}
+</script>
+</body>
+</html>
