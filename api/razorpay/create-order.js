@@ -11,9 +11,6 @@ module.exports = async function handler(req, res) {
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ error: 'Authentication required' });
 
-    // Use the same Supabase project as the frontend. A service-role key is
-    // preferred on the server so payment initialization is not blocked by RLS;
-    // ownership is still checked explicitly against the authenticated user.
     const dbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_PUBLISHABLE_KEY;
     const supabase = createClient(SUPABASE_URL, dbKey, {
       global: { headers: { Authorization: `Bearer ${token}` } }
@@ -36,11 +33,39 @@ module.exports = async function handler(req, res) {
     if (!order || order.user_id !== user.id) return res.status(404).json({ error: 'Order not found' });
     if (!['pending','confirmed'].includes(order.status)) return res.status(400).json({ error: 'Order is not payable' });
 
+    // Never start a second Razorpay payment for an order that is already paid.
+    const { data: existingPayment, error: existingPaymentError } = await supabase
+      .from('payments')
+      .select('status,razorpay_order_id,razorpay_payment_id,amount')
+      .eq('order_id', order.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (existingPaymentError) return res.status(500).json({ error: 'Could not load payment state' });
+    if (existingPayment?.status === 'paid') {
+      return res.status(409).json({ error: 'This order has already been paid', paid: true, razorpay_payment_id: existingPayment.razorpay_payment_id });
+    }
+
+    // A confirmed order with an unpaid payment row is an inconsistent state.
+    // Normalize it before creating/recreating the Razorpay checkout.
+    if (order.status === 'confirmed') {
+      const { error: normalizeError } = await supabase
+        .from('orders')
+        .update({ status: 'pending', updated_at: new Date().toISOString() })
+        .eq('id', order.id)
+        .eq('user_id', user.id);
+      if (normalizeError) return res.status(500).json({ error: 'Could not reset unpaid order' });
+    }
+
     const amount = Math.round(Number(order.total) * 100);
     if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ error: 'Invalid order amount' });
 
     const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
-    const rzpOrder = await razorpay.orders.create({ amount, currency: 'INR', receipt: order.order_number, notes: { supabase_order_id: order.id, user_id: user.id } });
+    const rzpOrder = await razorpay.orders.create({
+      amount,
+      currency: 'INR',
+      receipt: order.order_number,
+      notes: { supabase_order_id: order.id, user_id: user.id }
+    });
 
     const { error: paymentError } = await supabase.from('payments').upsert({
       order_id: order.id,
@@ -48,7 +73,12 @@ module.exports = async function handler(req, res) {
       provider: 'razorpay',
       razorpay_order_id: rzpOrder.id,
       amount: Number(order.total),
-      status: 'created'
+      status: 'created',
+      razorpay_payment_id: null,
+      razorpay_signature: null,
+      method: null,
+      paid_at: null,
+      updated_at: new Date().toISOString()
     }, { onConflict: 'order_id' });
     if (paymentError) return res.status(500).json({ error: 'Could not initialize payment' });
 
