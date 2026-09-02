@@ -1,43 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shopping — AgriMart</title><meta name="description" content="Browse agricultural products on AgriMart.">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Agricultural Products Online | Seeds, Fertilizers, Tools & More | AgriMart</title>
+<meta name="description" content="Shop quality agricultural products online at AgriMart — seeds, fertilizers, crop protection, farming tools, irrigation, machinery, organic products and gardening supplies.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://agrishop1.vercel.app/shop.html">
+<meta property="og:title" content="Shop Agricultural Products Online | AgriMart">
+<meta property="og:description" content="Buy trusted farming and agricultural supplies online from AgriMart.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://agrishop1.vercel.app/shop.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.shop-page{padding-bottom:52px}.shop-hero{padding:20px 0 14px}.shop-hero h1{font-size:clamp(30px,5vw,44px);line-height:1.1;color:#173b2b;margin:0 0 8px}.shop-hero p{max-width:800px;color:#667267;line-height:1.65;margin:0}.quick-cats{display:flex;gap:8px;overflow-x:auto;padding:8px 0 18px;scrollbar-width:thin}.quick-cats a{flex:0 0 auto;padding:8px 13px;border:1px solid #dfe6dc;border-radius:999px;background:#fff;color:#173b2b;text-decoration:none;font-size:13px;font-weight:700}.quick-cats a:hover{border-color:#2c6a47;background:#f4f7f1}.shop-layout{align-items:start}.filter-panel{position:sticky;top:14px}.filter-close{display:none}.shop-main{min-width:0}.shop-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 0}.shop-toolbar select{min-height:40px;padding:8px 12px;border:1px solid #dfe6dc;border-radius:9px;background:#fff}.mobile-filter-btn{display:none}.filter-overlay{display:none}.filter-opt{line-height:1.45}.empty-state{padding:42px 18px;text-align:center}.seo-note{margin-top:24px;padding:18px 20px;background:#f4f7f1;border:1px solid #dfe6dc;border-radius:18px}.seo-note h2{font-size:21px;color:#173b2b;margin:0 0 7px}.seo-note p{color:#4f5d52;line-height:1.65;margin:0}@media(max-width:850px){.shop-layout{display:block}.mobile-filter-btn{display:inline-flex}.filter-panel{position:fixed;top:0;bottom:0;left:0;width:min(88vw,340px);z-index:1001;overflow-y:auto;transform:translateX(-105%);transition:transform .2s ease;border-radius:0;padding:18px}.filter-panel.open{transform:translateX(0)}.filter-overlay.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:1000}.filter-close{display:inline-flex}.shop-toolbar{position:sticky;top:0;background:#fff;z-index:20}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}@media(max-width:430px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.shop-hero h1{font-size:29px}.shop-hero p{font-size:13px}.shop-toolbar select{width:100%}}
+</style>
 </head>
 <body data-page="shop">
 <div id="site-header"></div>
-<main><div class="container">
+<main class="shop-page">
+<div class="container">
 <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Shop</span></div>
-<div class="flex-between" style="margin-bottom:14px;"><h2 style="font-size:26px;">All Products <span class="muted" id="resultCount" style="font-size:14px;font-weight:400;"></span></h2><button class="btn btn-outline btn-sm mobile-filter-btn" onclick="openMobileFilter()">Filters</button></div>
+<section class="shop-hero">
+<span class="eyebrow">AgriMart Marketplace</span>
+<h1>Shop Agricultural Products</h1>
+<p>Discover quality seeds, fertilizers, crop protection products, farming tools, irrigation systems, machinery, organic inputs and gardening supplies from AgriMart sellers.</p>
+</section>
+<nav class="quick-cats" aria-label="Popular product categories" id="quickCats"></nav>
+<div class="flex-between" style="margin-bottom:12px;gap:10px;align-items:center"><div><h2 style="font-size:24px;margin:0">All Products <span class="muted" id="resultCount" style="font-size:14px;font-weight:400"></span></h2></div><button class="btn btn-outline btn-sm mobile-filter-btn" type="button" onclick="openMobileFilter()">☰ Filters</button></div>
 <div class="shop-layout">
-<div class="filter-overlay" id="filterOverlay" onclick="closeMobileFilter()"></div><aside class="filter-panel" id="filterPanel">
-<h4>Filters <a href="#" class="muted" style="font-size:12px;font-weight:600" onclick="resetFilters();return false;">Clear all</a></h4>
-<div class="filter-group"><h4 style="font-size:12px;">Category</h4><div id="catFilters"></div></div>
-<div class="filter-group"><h4 style="font-size:12px;">Brand</h4><div id="brandFilters"></div></div>
-<div class="filter-group"><h4 style="font-size:12px;">Price Range (₹)</h4><div class="range-inputs"><input type="number" id="minPrice" placeholder="Min"><span>–</span><input type="number" id="maxPrice" placeholder="Max"></div></div>
-<div class="filter-group"><h4 style="font-size:12px;">Rating</h4><div id="ratingFilters"></div></div>
+<div class="filter-overlay" id="filterOverlay" onclick="closeMobileFilter()"></div>
+<aside class="filter-panel" id="filterPanel" aria-label="Product filters">
+<div class="toolbar" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="font-size:19px;margin:0">Filters</h2><div><button class="btn btn-outline btn-sm filter-close" type="button" onclick="closeMobileFilter()">Close</button> <a href="#" class="muted" style="font-size:12px;font-weight:700" onclick="resetFilters();return false">Clear all</a></div></div>
+<div class="filter-group"><h3 style="font-size:12px">Category</h3><div id="catFilters"></div></div>
+<div class="filter-group"><h3 style="font-size:12px">Brand</h3><div id="brandFilters"></div></div>
+<div class="filter-group"><h3 style="font-size:12px">Price Range (₹)</h3><div class="range-inputs"><input type="number" id="minPrice" inputmode="numeric" min="0" placeholder="Min" aria-label="Minimum price"><span>–</span><input type="number" id="maxPrice" inputmode="numeric" min="0" placeholder="Max" aria-label="Maximum price"></div></div>
+<div class="filter-group"><h3 style="font-size:12px">Rating</h3><div id="ratingFilters"></div></div>
 <div class="filter-group"><label class="filter-opt"><input type="checkbox" id="inStockOnly"> In stock only</label></div>
 </aside>
-<div><div class="shop-toolbar"><span class="muted" style="font-size:13px;" id="toolbarCount"></span><select id="sortSelect"><option value="popularity">Sort: Popularity</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="rating">Rating</option><option value="newest">Newest</option></select></div><div class="product-grid" id="productGrid"></div><div id="emptyState"></div><div class="pagination" id="pagination"></div></div>
-</div></div></main>
+<section class="shop-main" aria-label="Product results">
+<div class="shop-toolbar"><span class="muted" style="font-size:13px" id="toolbarCount"></span><select id="sortSelect" aria-label="Sort products"><option value="popularity">Sort: Popularity</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="rating">Rating</option><option value="newest">Newest</option></select></div>
+<div class="product-grid" id="productGrid"></div>
+<div id="emptyState"></div>
+<div class="pagination" id="pagination" aria-label="Product pagination"></div>
+</section>
+</div>
+<section class="seo-note"><h2>Farming supplies for every stage of cultivation</h2><p>Browse AgriMart by category or use filters to find the right agricultural products for your crop, farm and budget. Product listings are organized for quick comparison across seeds, crop nutrition, protection, tools, irrigation and other farm essentials.</p></section>
+</div>
+</main>
 <div id="site-footer"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/data.js"></script><script src="assets/supabase-client.js"></script><script src="assets/catalog-v2.js"></script><script src="assets/common.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/catalog-v2.js"></script>
+<script src="assets/common.js"></script>
 <script>
 const filters={category:new Set(),brand:new Set(),rating:0,minPrice:'',maxPrice:'',inStockOnly:false,sort:'popularity'};let page=1;const PAGE_SIZE=8;
-async function initPage(){
-  await AgriCatalog.ready;
-  const initialCat=qs('category');if(initialCat)filters.category.add(initialCat);const q=qs('q')||'';
-  document.getElementById('minPrice').addEventListener('input',e=>{filters.minPrice=e.target.value;page=1;renderShop();});
-  document.getElementById('maxPrice').addEventListener('input',e=>{filters.maxPrice=e.target.value;page=1;renderShop();});
-  document.getElementById('inStockOnly').addEventListener('change',e=>{filters.inStockOnly=e.target.checked;page=1;renderShop();});
-  document.getElementById('sortSelect').addEventListener('change',e=>{filters.sort=e.target.value;renderShop();});buildFilterOptions();renderShop(q);
-}
-function buildFilterOptions(){document.getElementById('catFilters').innerHTML=CATEGORIES.map(c=>`<label class="filter-opt"><input type="checkbox" ${filters.category.has(c.id)?'checked':''} onchange="toggleFilter('category','${c.id}')"> ${c.name} <span class="muted">(${PRODUCTS.filter(p=>p.category===c.id).length})</span></label>`).join('');const brands=[...new Set(PRODUCTS.map(p=>p.brand))];document.getElementById('brandFilters').innerHTML=brands.map(b=>`<label class="filter-opt"><input type="checkbox" onchange="toggleFilter('brand','${b}')"> ${b}</label>`).join('');document.getElementById('ratingFilters').innerHTML=[4,3,2].map(r=>`<label class="filter-opt"><input type="radio" name="ratingf" onchange="setRating(${r})"> ${stars(r)} &amp; up</label>`).join('')+`<label class="filter-opt"><input type="radio" name="ratingf" checked onchange="setRating(0)"> All ratings</label>`;}
-function toggleFilter(kind,val){const s=filters[kind];if(s.has(val))s.delete(val);else s.add(val);page=1;renderShop();}function setRating(r){filters.rating=r;page=1;renderShop();}
-function resetFilters(){filters.category.clear();filters.brand.clear();filters.rating=0;filters.minPrice='';filters.maxPrice='';filters.inStockOnly=false;filters.sort='popularity';page=1;document.getElementById('minPrice').value='';document.getElementById('maxPrice').value='';document.getElementById('inStockOnly').checked=false;document.getElementById('sortSelect').value='popularity';buildFilterOptions();renderShop('');}
-function filteredProducts(searchQuery){let list=[...PRODUCTS];if(searchQuery&&searchQuery.trim()){const q=searchQuery.toLowerCase();list=list.filter(p=>p.name.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q)||p.category.toLowerCase().includes(q)||sellerName(p.seller).toLowerCase().includes(q));}if(filters.category.size)list=list.filter(p=>filters.category.has(p.category));if(filters.brand.size)list=list.filter(p=>filters.brand.has(p.brand));if(filters.rating)list=list.filter(p=>p.rating>=filters.rating);if(filters.minPrice)list=list.filter(p=>p.price>=Number(filters.minPrice));if(filters.maxPrice)list=list.filter(p=>p.price<=Number(filters.maxPrice));if(filters.inStockOnly)list=list.filter(p=>p.stock>0);switch(filters.sort){case'price-asc':list.sort((a,b)=>a.price-b.price);break;case'price-desc':list.sort((a,b)=>b.price-a.price);break;case'rating':list.sort((a,b)=>b.rating-a.rating);break;case'newest':list.reverse();break;default:list.sort((a,b)=>b.reviews-a.reviews);}return list;}
-function renderShop(searchQuery){if(searchQuery===undefined)searchQuery=qs('q')||'';const all=filteredProducts(searchQuery),totalPages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));if(page>totalPages)page=1;const items=all.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);document.getElementById('resultCount').textContent=`(${all.length} results)`;document.getElementById('toolbarCount').textContent=`Showing ${items.length} of ${all.length} products`;document.getElementById('productGrid').innerHTML=items.map(productCard).join('');document.getElementById('emptyState').innerHTML=items.length?'':`<div class="empty-state"><div class="ic">🔎</div><h3>No products found</h3><p>Try adjusting your filters or search terms.</p><button class="btn btn-outline" style="margin-top:14px" onclick="resetFilters()">Clear Filters</button></div>`;document.getElementById('pagination').innerHTML=totalPages>1?Array.from({length:totalPages},(_,i)=>i+1).map(n=>`<button class="${n===page?'active':''}" onclick="page=${n};renderShop('${searchQuery.replace(/'/g,"\\'")}');window.scrollTo(0,0);">${n}</button>`).join(''):'';}
-function openMobileFilter(){document.getElementById('filterPanel').classList.add('open');document.getElementById('filterOverlay').classList.add('open');}function closeMobileFilter(){document.getElementById('filterPanel').classList.remove('open');document.getElementById('filterOverlay').classList.remove('open');}
-</script></body></html>
+function shopProducts(){return (window.AGRI_PRODUCTS&&window.AGRI_PRODUCTS.length)?window.AGRI_PRODUCTS:PRODUCTS;}
+async function initPage(){try{await AgriCatalog.ready;}catch(e){console.warn('Catalog load failed; using local catalog.',e)}const initialCat=qs('category');if(initialCat)filters.category.add(initialCat);const q=qs('q')||'';document.getElementById('minPrice').addEventListener('input',e=>{filters.minPrice=e.target.value;page=1;renderShop(qs('q')||'')});document.getElementById('maxPrice').addEventListener('input',e=>{filters.maxPrice=e.target.value;page=1;renderShop(qs('q')||'')});document.getElementById('inStockOnly').addEventListener('change',e=>{filters.inStockOnly=e.target.checked;page=1;renderShop(qs('q')||'')});document.getElementById('sortSelect').addEventListener('change',e=>{filters.sort=e.target.value;renderShop(qs('q')||'')});buildQuickCategories();buildFilterOptions();renderShop(q)}
+function buildQuickCategories(){document.getElementById('quickCats').innerHTML=CATEGORIES.map(c=>`<a href="shop.html?category=${encodeURIComponent(c.id)}">${c.icon} ${c.name}</a>`).join('')}
+function buildFilterOptions(){const list=shopProducts();document.getElementById('catFilters').innerHTML=CATEGORIES.map(c=>{const count=list.filter(p=>p.category===c.id).length;return `<label class="filter-opt"><input type="checkbox" ${filters.category.has(c.id)?'checked':''} onchange="toggleFilter('category','${c.id}')"> ${c.name} <span class="muted">(${count})</span></label>`}).join('');const brands=[...new Set(list.map(p=>p.brand).filter(Boolean))].sort();document.getElementById('brandFilters').innerHTML=brands.map(b=>`<label class="filter-opt"><input type="checkbox" ${filters.brand.has(b)?'checked':''} onchange="toggleFilter('brand','${String(b).replace(/'/g,"\\'")}")"> ${b}</label>`).join('');document.getElementById('ratingFilters').innerHTML=[4,3,2].map(r=>`<label class="filter-opt"><input type="radio" name="ratingf" ${filters.rating===r?'checked':''} onchange="setRating(${r})"> ${stars(r)} &amp; up</label>`).join('')+`<label class="filter-opt"><input type="radio" name="ratingf" ${filters.rating===0?'checked':''} onchange="setRating(0)"> All ratings</label>`}
+function toggleFilter(kind,val){const s=filters[kind];s.has(val)?s.delete(val):s.add(val);page=1;renderShop(qs('q')||'');}
+function setRating(r){filters.rating=r;page=1;renderShop(qs('q')||'')}
+function resetFilters(){filters.category.clear();filters.brand.clear();filters.rating=0;filters.minPrice='';filters.maxPrice='';filters.inStockOnly=false;filters.sort='popularity';page=1;document.getElementById('minPrice').value='';document.getElementById('maxPrice').value='';document.getElementById('inStockOnly').checked=false;document.getElementById('sortSelect').value='popularity';buildFilterOptions();renderShop(qs('q')||'')}
+function filteredProducts(searchQuery){let list=[...shopProducts()];const q=String(searchQuery||'').trim().toLowerCase();if(q)list=list.filter(p=>String(p.name||'').toLowerCase().includes(q)||String(p.brand||'').toLowerCase().includes(q)||String(p.category||'').toLowerCase().includes(q)||String(p.sellerName||sellerName(p.seller)||'').toLowerCase().includes(q));if(filters.category.size)list=list.filter(p=>filters.category.has(p.category));if(filters.brand.size)list=list.filter(p=>filters.brand.has(p.brand));if(filters.rating)list=list.filter(p=>Number(p.rating||0)>=filters.rating);if(filters.minPrice)list=list.filter(p=>Number(p.price)>=Number(filters.minPrice));if(filters.maxPrice)list=list.filter(p=>Number(p.price)<=Number(filters.maxPrice));if(filters.inStockOnly)list=list.filter(p=>Number(p.stock)>0);switch(filters.sort){case'price-asc':list.sort((a,b)=>Number(a.price)-Number(b.price));break;case'price-desc':list.sort((a,b)=>Number(b.price)-Number(a.price));break;case'rating':list.sort((a,b)=>Number(b.rating||0)-Number(a.rating||0));break;case'newest':list.reverse();break;default:list.sort((a,b)=>Number(b.reviews||0)-Number(a.reviews||0))}return list}
+function renderShop(searchQuery){const all=filteredProducts(searchQuery);const totalPages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));if(page>totalPages)page=1;const items=all.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);document.getElementById('resultCount').textContent=`(${all.length} results)`;document.getElementById('toolbarCount').textContent=all.length?`Showing ${(page-1)*PAGE_SIZE+1}–${Math.min(page*PAGE_SIZE,all.length)} of ${all.length} products`:'0 products';document.getElementById('productGrid').innerHTML=items.map(productCard).join('');document.getElementById('emptyState').innerHTML=items.length?'':`<div class="empty-state"><div class="ic">🔎</div><h3>No products found</h3><p>Try a different search or clear some filters.</p><button class="btn btn-outline" style="margin-top:14px" onclick="resetFilters()">Clear Filters</button></div>`;document.getElementById('pagination').innerHTML=totalPages>1?Array.from({length:totalPages},(_,i)=>i+1).map(n=>`<button class="${n===page?'active':''}" aria-label="Page ${n}" ${n===page?'aria-current="page"':''} onclick="page=${n};renderShop(qs('q')||'');window.scrollTo({top:0,behavior:'smooth'})">${n}</button>`).join(''):''}
+function openMobileFilter(){document.getElementById('filterPanel').classList.add('open');document.getElementById('filterOverlay').classList.add('open');document.body.style.overflow='hidden'}function closeMobileFilter(){document.getElementById('filterPanel').classList.remove('open');document.getElementById('filterOverlay').classList.remove('open');document.body.style.overflow=''}
+const sd={"@context":"https://schema.org","@type":"CollectionPage","name":"AgriMart Agricultural Products","description":"Shop seeds, fertilizers, crop protection products, tools, irrigation, machinery, organic products and gardening supplies.","url":"https://agrishop1.vercel.app/shop.html"};const ld=document.createElement('script');ld.type='application/ld+json';ld.textContent=JSON.stringify(sd);document.head.appendChild(ld);
+</script>
+</body>
+</html>
