@@ -3,6 +3,7 @@
 if(document.body&&document.body.getAttribute('data-page')==='admin'){
   document.write('<script src="/assets/admin-contact.js"></'+'script>');
   document.write('<script src="/assets/admin-about-control.js"></'+'script>');
+  document.write('<script src="/assets/admin-tracking.js"></'+'script>');
 }
 function renderHeader(){
   const el=document.getElementById('site-header');
