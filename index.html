@@ -12,7 +12,7 @@
 <body data-page="home">
 <div id="site-header"></div>
 <main>
-<section class="hero"><div class="container hero-inner"><div><span class="hero-eyebrow">🌾 India's Trusted Agri Marketplace</span><h1>Everything You Need for <em>Better Farming</em></h1><p class="sub">Buy quality seeds, fertilizers, tools and machinery from verified sellers at competitive prices — delivered straight to your farm gate.</p><div class="hero-btns"><a href="shop.html" class="btn btn-accent">Shop Now</a><a href="seller-verification.html" class="btn btn-outline seller-hero-btn" style="color:#fff;border-color:rgba(255,255,255,.5)">🌱 Become a Seller</a></div><div class="hero-stats"><div><b>12,000+</b><span>Products Listed</span></div><div><b>40,000+</b><span>Happy Farmers</span></div><div><b>500+</b><span>Verified Sellers</span></div><div><b>4.7★</b><span>Average Rating</span></div></div></div><div class="hero-visual"><img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=1200&auto=format&fit=crop" alt="Farmer in green field at sunrise"><div class="float-card"><span class="dot"></span><div><b>Order confirmed</b><span>Rice Seeds • Delivering to Patna, Bihar</span></div></div></div></div></section>
+<section class="hero" id="homeHero"><div class="container hero-inner"><div><span class="hero-eyebrow" id="heroEyebrow">🌾 India's Trusted Agri Marketplace</span><h1><span id="heroTitleBefore">Everything You Need for</span> <em id="heroTitleEmphasis">Better Farming</em></h1><p class="sub" id="heroDescription">Buy quality seeds, fertilizers, tools and machinery from verified sellers at competitive prices — delivered straight to your farm gate.</p><div class="hero-btns"><a id="heroPrimaryButton" href="shop.html" class="btn btn-accent">Shop Now</a><a id="heroSecondaryButton" href="seller-verification.html" class="btn btn-outline seller-hero-btn" style="color:#fff;border-color:rgba(255,255,255,.5)">🌱 Become a Seller</a></div><div class="hero-stats" id="heroStats"></div></div><div class="hero-visual"><img id="heroImage" src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=1200&auto=format&fit=crop" alt="Farmer in green field at sunrise"><div class="float-card" id="heroOverlay"><span class="dot"></span><div><b id="heroOverlayTitle">Order confirmed</b><span id="heroOverlayText">Rice Seeds • Delivering to Patna, Bihar</span></div></div></div></div></section>
 <section class="pad"><div class="container"><div class="section-head"><div><span class="eyebrow">Browse</span><h2>Shop by Category</h2></div></div><div class="cat-grid" id="catGrid"></div></div></section>
 <section class="pad bg-alt"><div class="container"><div class="section-head"><div><span class="eyebrow">Handpicked</span><h2>Featured Products</h2><p>Quality-checked products, most loved by farmers this season.</p></div><a href="shop.html" class="link-more">View All →</a></div><div class="product-grid" id="featuredGrid"></div></div></section>
 <section class="pad"><div class="container"><div class="section-head"><div><span class="eyebrow">Loved by farmers</span><h2>Best Sellers</h2></div><a href="shop.html" class="link-more">View All →</a></div><div class="product-grid" id="bestGrid"></div></div></section>
@@ -29,7 +29,29 @@
 <script src="assets/catalog-v2.js"></script>
 <script src="assets/common.js"></script>
 <script>
+const DEFAULT_HERO={is_active:true,eyebrow:"🌾 India's Trusted Agri Marketplace",title_before:'Everything You Need for',title_emphasis:'Better Farming',description:'Buy quality seeds, fertilizers, tools and machinery from verified sellers at competitive prices — delivered straight to your farm gate.',primary_button_label:'Shop Now',primary_button_link:'shop.html',secondary_button_label:'🌱 Become a Seller',secondary_button_link:'seller-verification.html',secondary_button_visible:true,stats:[{value:'12,000+',label:'Products Listed'},{value:'40,000+',label:'Happy Farmers'},{value:'500+',label:'Verified Sellers'},{value:'4.7★',label:'Average Rating'}],hero_image_url:'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=1200&auto=format&fit=crop',hero_image_alt:'Farmer in green field at sunrise',overlay_visible:true,overlay_title:'Order confirmed',overlay_text:'Rice Seeds • Delivering to Patna, Bihar'};
+const escHero=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function renderHero(h){
+  const hero=document.getElementById('homeHero');
+  if(!h||h.is_active===false){hero.style.display='none';return;}
+  hero.style.display='';
+  document.getElementById('heroEyebrow').textContent=h.eyebrow||DEFAULT_HERO.eyebrow;
+  document.getElementById('heroTitleBefore').textContent=h.title_before||DEFAULT_HERO.title_before;
+  document.getElementById('heroTitleEmphasis').textContent=h.title_emphasis||DEFAULT_HERO.title_emphasis;
+  document.getElementById('heroDescription').textContent=h.description||DEFAULT_HERO.description;
+  const p=document.getElementById('heroPrimaryButton');p.textContent=h.primary_button_label||DEFAULT_HERO.primary_button_label;p.href=h.primary_button_link||DEFAULT_HERO.primary_button_link;
+  const s=document.getElementById('heroSecondaryButton');s.textContent=h.secondary_button_label||DEFAULT_HERO.secondary_button_label;s.href=h.secondary_button_link||DEFAULT_HERO.secondary_button_link;s.style.display=h.secondary_button_visible===false?'none':'';
+  const img=document.getElementById('heroImage');img.src=h.hero_image_url||DEFAULT_HERO.hero_image_url;img.alt=h.hero_image_alt||DEFAULT_HERO.hero_image_alt;
+  document.getElementById('heroOverlayTitle').textContent=h.overlay_title||DEFAULT_HERO.overlay_title;document.getElementById('heroOverlayText').textContent=h.overlay_text||DEFAULT_HERO.overlay_text;document.getElementById('heroOverlay').style.display=h.overlay_visible===false?'none':'';
+  const stats=Array.isArray(h.stats)?h.stats:DEFAULT_HERO.stats;
+  document.getElementById('heroStats').innerHTML=stats.slice(0,6).map(x=>`<div><b>${escHero(x.value)}</b><span>${escHero(x.label)}</span></div>`).join('');
+}
+async function loadHero(){
+  try{const {data,error}=await window.agriSupabase.from('homepage_hero_settings').select('*').eq('id',1).maybeSingle();if(error)throw error;renderHero(data||DEFAULT_HERO);}catch(e){console.warn('Homepage hero settings unavailable; using defaults.',e);renderHero(DEFAULT_HERO);}
+}
 async function initPage(){
+  renderHero(DEFAULT_HERO);
+  loadHero();
   try{ await window.AgriCatalog.ready; }catch(e){ console.error('Homepage catalog load failed:',e); }
   const products=(window.AGRI_PRODUCTS&&window.AGRI_PRODUCTS.length)?window.AGRI_PRODUCTS:PRODUCTS;
   document.getElementById('catGrid').innerHTML=CATEGORIES.map(c=>`<a href="shop.html?category=${c.id}" class="cat-card"><div class="ic">${c.icon}</div><h4>${c.name}</h4><span>${c.count} products</span></a>`).join('');
