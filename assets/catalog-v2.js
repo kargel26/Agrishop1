@@ -40,16 +40,15 @@
     const cid=await cartId(uid);
     const {data,error}=await agriSupabase.from('cart_items').select('id,product_id,quantity').eq('cart_id',cid);
     if(error) throw error;
-    const merged={};
-    (data||[]).forEach(r=>{const p=(window.AGRI_PRODUCTS||[]).find(x=>x.dbId===r.product_id);if(p)merged[p.id]=Number(r.quantity);});
-    Object.entries(state.cart||{}).forEach(([id,q])=>{merged[id]=Number(merged[id]||0)+Number(q||0);});
-    const clean={}; Object.entries(merged).forEach(([id,q])=>{const p=byId(id);if(p&&p.stock>0)clean[id]=Math.min(Number(q),p.stock);});
+    // Cloud cart is authoritative after login. Do not add local quantities again on every page load.
+    const clean={};
+    (data||[]).forEach(r=>{
+      const p=(window.AGRI_PRODUCTS||[]).find(x=>x.dbId===r.product_id);
+      if(p && p.stock>0) clean[p.id]=Math.min(Number(r.quantity)||0,p.stock);
+    });
     state.cart=clean;
-    const keep=(window.AGRI_PRODUCTS||[]).filter(p=>clean[p.id]).map(p=>({cart_id:cid,product_id:p.dbId,quantity:Number(clean[p.id])}));
-    const {data:old,error:oe}=await agriSupabase.from('cart_items').select('id,product_id').eq('cart_id',cid); if(oe)throw oe;
-    const keepIds=new Set(keep.map(x=>x.product_id)); const remove=(old||[]).filter(x=>!keepIds.has(x.product_id)).map(x=>x.id);
-    if(remove.length){const {error:e}=await agriSupabase.from('cart_items').delete().in('id',remove);if(e)throw e;}
-    if(keep.length){const {error:e}=await agriSupabase.from('cart_items').upsert(keep,{onConflict:'cart_id,product_id'});if(e)throw e;}
+    updateBadges();
+    if(typeof onCartChanged==='function')onCartChanged();
   }
   async function persist(){const u=await user();if(!u)return;const cid=await cartId(u.id);const rows=Object.entries(state.cart).map(([id,q])=>{const p=byId(id);return p?.dbId?{cart_id:cid,product_id:p.dbId,quantity:Number(q)}:null;}).filter(Boolean);const {data:old,error:oe}=await agriSupabase.from('cart_items').select('id,product_id').eq('cart_id',cid);if(oe)throw oe;const keep=new Set(rows.map(x=>x.product_id));const remove=(old||[]).filter(x=>!keep.has(x.product_id)).map(x=>x.id);if(remove.length){const {error:e}=await agriSupabase.from('cart_items').delete().in('id',remove);if(e)throw e;}if(rows.length){const {error:e}=await agriSupabase.from('cart_items').upsert(rows,{onConflict:'cart_id,product_id'});if(e)throw e;}}
   window.AgriCatalog={ready:(async()=>{try{await loadProducts();const u=await user();if(u)await syncCart(u.id);}catch(e){console.error('AgriMart Supabase catalog:',e);window.AGRI_PRODUCTS=[];if(typeof PRODUCTS!=='undefined') PRODUCTS.splice(0,PRODUCTS.length); }return window.AGRI_PRODUCTS||[];})()};
