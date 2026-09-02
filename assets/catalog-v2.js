@@ -1,5 +1,8 @@
 /* Supabase-backed catalog and authenticated cart bridge. */
 (function(){
+  const REMOVED_CATEGORY = 'fertilizers';
+  if(typeof CATEGORIES !== 'undefined') CATEGORIES.splice(0, CATEGORIES.length, ...CATEGORIES.filter(c=>c.id!==REMOVED_CATEGORY));
+  if(typeof PRODUCTS !== 'undefined') PRODUCTS.splice(0, PRODUCTS.length, ...PRODUCTS.filter(p=>p.category!==REMOVED_CATEGORY));
   const legacyProducts = (typeof PRODUCTS !== 'undefined') ? PRODUCTS.slice() : [];
   function mapProduct(p){
     const old = legacyProducts.find(x => x.name === p.name);
@@ -26,7 +29,7 @@
     if(!window.agriSupabase) { window.AGRI_PRODUCTS=[]; return; }
     const {data,error}=await agriSupabase.from('products').select('*,categories(slug,name),sellers(business_name,location,rating,verified)').eq('is_active',true).order('created_at',{ascending:false});
     if(error) throw error;
-    const products=(data||[]).map(mapProduct).filter(p=>p.img);
+    const products=(data||[]).map(mapProduct).filter(p=>p.img && p.category!==REMOVED_CATEGORY);
     if(typeof PRODUCTS!=='undefined') PRODUCTS.splice(0,PRODUCTS.length,...products);
     window.AGRI_PRODUCTS=products;
   }
