@@ -23,7 +23,7 @@
   async function signOut() {
     const { error } = await getClient().auth.signOut();
     if (error) throw error;
-    window.location.href = 'index.html';
+    window.location.href = '/';
   }
 
   async function getCurrentUser() {
@@ -53,5 +53,35 @@
     return { user, profile };
   }
 
+  function addSellerLogoutButton() {
+    if (!['/seller/dashboard', '/seller/dashboard/'].includes(window.location.pathname)) return;
+    const top = document.querySelector('.top');
+    if (!top || document.getElementById('sellerLogoutBtn')) return;
+    top.style.display = 'flex';
+    top.style.justifyContent = 'space-between';
+    top.style.alignItems = 'center';
+    top.style.gap = '16px';
+
+    const button = document.createElement('button');
+    button.id = 'sellerLogoutBtn';
+    button.type = 'button';
+    button.textContent = 'Log Out';
+    button.style.cssText = 'border:1px solid #ffffff66;background:#fff;color:#173b2b;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;white-space:nowrap';
+    button.addEventListener('click', async function () {
+      if (!confirm('Are you sure you want to log out?')) return;
+      button.disabled = true;
+      button.textContent = 'Logging out…';
+      try {
+        await signOut();
+      } catch (error) {
+        button.disabled = false;
+        button.textContent = 'Log Out';
+        alert(error.message || 'Unable to log out. Please try again.');
+      }
+    });
+    top.appendChild(button);
+  }
+
   window.AgriAuth = { signUp, signIn, signOut, getCurrentUser, getProfile, requireRole };
+  addSellerLogoutButton();
 })();
