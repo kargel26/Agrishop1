@@ -22,18 +22,35 @@
 
 <div id="site-footer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/data.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/catalog-v2.js"></script>
 <script src="assets/common.js"></script>
 <script>
-function initPage(){ renderWishlist(); }
+async function initPage(){
+  try{
+    // Load the same live Supabase catalog used by Home/Shop/Product pages.
+    // Without this, seller-added products have DB IDs that are not present in
+    // the legacy static PRODUCTS array and therefore disappear from Wishlist.
+    if(window.AgriCatalog?.ready) await window.AgriCatalog.ready;
+  }catch(e){
+    console.error('Wishlist catalog load failed:', e);
+  }
+  renderWishlist();
+}
+
 function onWishlistChanged(){ renderWishlist(); }
+
 function renderWishlist(){
-  const items = state.wishlistArr;
-  document.getElementById('wishHeading').textContent = 'My Wishlist' + (items.length?` (${items.length})`:'');
+  const saved = state.wishlistArr;
+  const products = saved.map(id=>byId(id)).filter(Boolean);
+  document.getElementById('wishHeading').textContent = 'My Wishlist' + (products.length?` (${products.length})`:'');
   const root = document.getElementById('wishRoot');
-  root.innerHTML = items.length===0 ? `
+  root.innerHTML = products.length===0 ? `
     <div class="empty-state"><div class="ic">♡</div><h3>Your wishlist is empty</h3><p>Save products you love for later.</p><a href="shop.html" class="btn btn-primary" style="margin-top:16px;">Browse Products</a></div>
-  ` : `<div class="product-grid">${items.map(id=>byId(id)).filter(Boolean).map(productCard).join('')}</div>`;
+  ` : `<div class="product-grid">${products.map(productCard).join('')}</div>`;
+  if(typeof updateBadges==='function') updateBadges();
 }
 </script>
 </body>
