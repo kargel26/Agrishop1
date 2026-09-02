@@ -1,12 +1,16 @@
 {
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/admin/", "destination": "/admin.html" },
+    { "source": "/admin", "destination": "/admin-login.html" },
+    { "source": "/admin/", "destination": "/admin-login.html" },
+    { "source": "/admin/dashboard", "destination": "/admin.html" },
+    { "source": "/admin/dashboard/", "destination": "/admin.html" },
+    { "source": "/seller", "destination": "/seller-login.html" },
+    { "source": "/seller/", "destination": "/seller-login.html" },
+    { "source": "/seller/dashboard", "destination": "/seller.html" },
+    { "source": "/seller/dashboard/", "destination": "/seller.html" },
     { "source": "/seller/login", "destination": "/seller-login.html" },
     { "source": "/seller/login/", "destination": "/seller-login.html" },
     { "source": "/seller/verification", "destination": "/seller-verification.html" },
-    { "source": "/seller/verification/", "destination": "/seller-verification.html" },
-    { "source": "/seller", "destination": "/seller.html" },
-    { "source": "/seller/", "destination": "/seller.html" }
+    { "source": "/seller/verification/", "destination": "/seller-verification.html" }
   ]
 }
