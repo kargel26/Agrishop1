@@ -1,154 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard — AgriMart</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/style.css">
 </head>
 <body data-page="admin">
-
 <div id="site-header"></div>
-
-<main>
-  <div class="container">
-    <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Admin Dashboard</span></div>
-    <div class="dash-layout">
-      <aside class="dash-side" id="adminMenu"></aside>
-      <div id="adminContent"></div>
-    </div>
-  </div>
-</main>
-
+<main><div class="container"><div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Admin Dashboard</span></div><div class="dash-layout"><aside class="dash-side" id="adminMenu"></aside><div id="adminContent"><div class="panel-card"><p class="muted">Loading admin dashboard…</p></div></div></div></div></main>
 <div id="site-footer"></div>
-
-<script src="assets/data.js"></script>
-<script src="assets/common.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/data.js"></script><script src="assets/common.js"></script><script src="assets/supabase-client.js"></script><script src="assets/auth.js"></script>
 <script>
-const ADMIN_MENU = ['Dashboard','Users','Sellers','Products','Categories','Orders','Payments','Refunds','Coupons','Reviews','Banners','Reports','Settings'];
-let adminTab = 'dashboard';
-function initPage(){
-  document.getElementById('adminMenu').innerHTML = ADMIN_MENU.map(m=>
-    `<a href="#" data-tab="${m.toLowerCase()}" class="${adminTab===m.toLowerCase()?'active':''}" onclick="setAdminTab('${m.toLowerCase()}');return false;">${m}</a>`).join('');
-  renderAdminContent();
+const ADMIN_MENU=['Dashboard','Users','Sellers','Products','Categories','Orders','Payments','Refunds','Coupons','Reviews','Banners','Reports','Settings'];
+let adminTab='dashboard', db={profiles:[],sellers:[],products:[],categories:[],orders:[],payments:[],reviews:[],applications:[]};
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>'₹'+Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2});
+const date=v=>v?new Date(v).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'—';
+const chip=v=>`<span class="status-chip chip-${String(v||'').toLowerCase().replace(/\s+/g,'-')}">${esc(v||'—')}</span>`;
+async function initPage(){
+  const access=await AgriAuth.requireRole(['admin']); if(!access)return;
+  document.getElementById('adminMenu').innerHTML=ADMIN_MENU.map(m=>`<a href="#" data-tab="${m.toLowerCase()}" class="${adminTab===m.toLowerCase()?'active':''}" onclick="setAdminTab('${m.toLowerCase()}');return false;">${m}</a>`).join('');
+  await loadAdminData(); renderAdminContent();
 }
-function setAdminTab(t){
-  adminTab = t;
-  document.querySelectorAll('#adminMenu a').forEach(a=>a.classList.toggle('active', a.dataset.tab===t));
-  renderAdminContent();
+async function loadAdminData(){
+  const s=window.agriSupabase;
+  const results=await Promise.all([
+    s.from('profiles').select('id,full_name,phone,role,created_at').order('created_at',{ascending:false}),
+    s.from('sellers').select('id,user_id,business_name,location,rating,verified,status,created_at').order('created_at',{ascending:false}),
+    s.from('products').select('id,seller_id,category_id,name,brand,price,mrp,stock,rating,review_count,is_active,created_at').order('created_at',{ascending:false}),
+    s.from('categories').select('id,slug,name,icon,product_count,is_active').order('name'),
+    s.from('orders').select('id,order_number,user_id,address_id,status,subtotal,discount,delivery_fee,tax,total,created_at,updated_at').order('created_at',{ascending:false}),
+    s.from('payments').select('id,order_id,user_id,provider,razorpay_order_id,razorpay_payment_id,amount,status,method,paid_at,created_at').order('created_at',{ascending:false}),
+    s.from('reviews').select('id,product_id,user_id,order_id,rating,review_text,is_approved,created_at').order('created_at',{ascending:false}),
+    s.from('seller_applications').select('id,user_id,business_name,phone,address,status,created_at,reviewed_at').order('created_at',{ascending:false})
+  ]);
+  const names=['profiles','sellers','products','categories','orders','payments','reviews','applications'];
+  results.forEach((r,i)=>{if(r.error)throw r.error;db[names[i]]=r.data||[];});
 }
-function renderAdminContent(){
-  document.getElementById('adminContent').innerHTML = adminContent();
-}
+function setAdminTab(t){adminTab=t;document.querySelectorAll('#adminMenu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===t));renderAdminContent();}
+function renderAdminContent(){document.getElementById('adminContent').innerHTML=adminContent();}
 function adminContent(){
-  if(adminTab==='orders' || adminTab==='payments' || adminTab==='refunds'){
-    const rows = state.orders;
-    return `
-    <div class="panel-card">
-      <h3>${adminTab.charAt(0).toUpperCase()+adminTab.slice(1)}</h3>
-      ${rows.length===0?`<p class="muted">No orders placed yet. Orders will appear here after a customer completes checkout.</p>`:`
-      <table class="data-table">
-        <tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Amount</th><th>Payment</th><th>Status</th></tr>
-        ${rows.map(o=>`<tr><td>${o.id}</td><td>${new Date(o.date).toLocaleDateString()}</td><td>${o.address.name}</td><td>${fmt(o.totals.total)}</td><td>${o.paymentStatus}</td><td><span class="status-chip chip-${o.status.toLowerCase().replace(/ /g,'-')}">${o.status}</span></td></tr>`).join('')}
-      </table>`}
-    </div>`;
-  }
-  if(adminTab==='products' || adminTab==='categories'){
-    return `
-    <div class="panel-card">
-      <h3>${adminTab==='products'?'All Products':'Categories'}</h3>
-      <table class="data-table">
-        ${adminTab==='products'?`
-        <tr><th>Product</th><th>Category</th><th>Seller</th><th>Price</th><th>Stock</th><th>Status</th></tr>
-        ${PRODUCTS.map(p=>`<tr><td>${p.name}</td><td>${p.category}</td><td>${sellerName(p.seller)}</td><td>${fmt(p.price)}</td><td>${p.stock}</td><td><span class="status-chip ${p.stock>0?'chip-delivered':'chip-cancelled'}">${p.stock>0?'Active':'Out of Stock'}</span></td></tr>`).join('')}
-        `:`
-        <tr><th>Category</th><th>Products</th></tr>
-        ${CATEGORIES.map(c=>`<tr><td>${c.icon} ${c.name}</td><td>${c.count}</td></tr>`).join('')}
-        `}
-      </table>
-    </div>`;
-  }
-  if(adminTab==='users' || adminTab==='sellers'){
-    return `
-    <div class="panel-card">
-      <h3>${adminTab==='sellers'?'Sellers':'Users'}</h3>
-      <table class="data-table">
-        ${adminTab==='sellers'?`
-        <tr><th>Seller</th><th>Location</th><th>Rating</th><th>Products</th><th>Status</th></tr>
-        ${SELLERS.map(s=>`<tr><td>${s.name}</td><td>${s.location}</td><td>${s.rating}</td><td>${s.products}</td><td><span class="status-chip chip-delivered">Verified</span></td></tr>`).join('')}
-        `:`
-        <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
-        <tr><td>Ramesh Yadav</td><td>ramesh@example.com</td><td>Customer</td><td>Jan 2026</td></tr>
-        <tr><td>Sunita Devi</td><td>sunita@example.com</td><td>Customer</td><td>Feb 2026</td></tr>
-        <tr><td>Manpreet Singh</td><td>manpreet@example.com</td><td>Customer</td><td>Mar 2026</td></tr>
-        `}
-      </table>
-    </div>`;
-  }
-  if(adminTab==='coupons'){
-    return `<div class="panel-card"><h3>Coupons</h3><table class="data-table"><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Status</th></tr>
-    ${Object.entries(COUPONS).map(([k,c])=>`<tr><td>${k}</td><td>${c.type}</td><td>${c.type==='percent'?c.value+'%':fmt(c.value)}</td><td>${fmt(c.min)}</td><td><span class="status-chip chip-delivered">Active</span></td></tr>`).join('')}
-    </table></div>`;
-  }
-  if(adminTab==='reviews'){
-    return `<div class="panel-card"><h3>Reviews</h3>${REVIEWS_HOME.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--line);"><b>${r.name}</b> — <span class="stars">${stars(r.rating)}</span><p class="muted" style="font-size:13px;">${r.text}</p></div>`).join('')}</div>`;
-  }
-  if(adminTab==='banners'){
-    return `<div class="panel-card"><h3>Homepage Banners</h3><p class="muted">Manage hero banners and promotional offer sections shown on the homepage.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
-      <div class="offer-banner offer-1" style="min-height:100px;"><h3 style="font-size:16px;">Save Up to 30%</h3></div>
-      <div class="offer-banner offer-2" style="min-height:100px;"><h3 style="font-size:16px;">Organic Essentials</h3></div>
-    </div></div>`;
-  }
-  if(adminTab==='settings'){
-    return `<div class="panel-card"><h3>Website Settings</h3>
-    <div class="form-grid">
-      <div class="form-field"><label>Site Name</label><input value="AgriMart"></div>
-      <div class="form-field"><label>Support Email</label><input value="${CONTACT.email}"></div>
-      <div class="form-field"><label>Delivery Threshold (Free Delivery)</label><input value="999"></div>
-      <div class="form-field"><label>Default Tax Rate (%)</label><input value="5"></div>
-    </div>
-    <button class="btn btn-primary btn-sm" style="margin-top:16px;" onclick="toast('Settings saved.')">Save Settings</button>
-    </div>`;
-  }
-  if(adminTab==='reports'){
-    return `<div class="panel-card"><h3>Sales Reports</h3><p class="muted">Export detailed sales, revenue and inventory reports.</p>
-    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
-      <button class="btn btn-outline btn-sm" onclick="toast('Generating sales report…')">Export Sales Report</button>
-      <button class="btn btn-outline btn-sm" onclick="toast('Generating inventory report…')">Export Inventory Report</button>
-    </div></div>`;
-  }
-  const orders = state.orders;
-  const totalRevenue = orders.reduce((a,o)=>a+o.totals.total,0);
-  const lowStock = PRODUCTS.filter(p=>p.stock>0 && p.stock<15).length;
-  return `
-  <div class="stat-grid">
-    <div class="stat-card"><div class="top"><div class="ic">👥</div></div><div class="val">4,821</div><div class="lbl">Total Users</div><div class="delta up">▲ 6.2% this month</div></div>
-    <div class="stat-card"><div class="top"><div class="ic">🏪</div></div><div class="val">${SELLERS.length}</div><div class="lbl">Total Sellers</div><div class="delta up">▲ 2 new this week</div></div>
-    <div class="stat-card"><div class="top"><div class="ic">📦</div></div><div class="val">${PRODUCTS.length}</div><div class="lbl">Total Products</div><div class="delta up">▲ 12 added</div></div>
-    <div class="stat-card"><div class="top"><div class="ic">🧾</div></div><div class="val">${orders.length}</div><div class="lbl">Total Orders (this browser)</div></div>
-    <div class="stat-card"><div class="top"><div class="ic">📅</div></div><div class="val">${orders.length}</div><div class="lbl">Today's Orders</div></div>
-    <div class="stat-card"><div class="top"><div class="ic">💰</div></div><div class="val">${fmt(totalRevenue)}</div><div class="lbl">Total Revenue</div></div>
-    <div class="stat-card"><div class="top"><div class="ic">⏳</div></div><div class="val">${orders.filter(o=>o.status!=='Delivered'&&o.status!=='Cancelled').length}</div><div class="lbl">Pending Orders</div></div>
-    <div class="stat-card"><div class="top"><div class="ic">⚠️</div></div><div class="val">${lowStock}</div><div class="lbl">Low Stock Products</div><div class="delta down">Needs attention</div></div>
-  </div>
-  <div class="panel-card mt24">
-    <h3>Sales Over Time (Last 7 Days)</h3>
-    ${barsChart([12000,15400,11200,18900,21400,17600,23100],['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])}
-  </div>
-  <div class="panel-card">
-    <h3>Category Performance</h3>
-    ${barsChart(CATEGORIES.map(c=>c.count), CATEGORIES.map(c=>c.name.split(' ')[0]))}
-  </div>
-  <div class="panel-card">
-    <h3>Top Selling Products</h3>
-    <table class="data-table"><tr><th>Product</th><th>Category</th><th>Reviews</th><th>Rating</th><th>Price</th></tr>
-    ${[...PRODUCTS].sort((a,b)=>b.reviews-a.reviews).slice(0,5).map(p=>`<tr><td>${p.name}</td><td>${p.category}</td><td>${p.reviews}</td><td>${p.rating} ★</td><td>${fmt(p.price)}</td></tr>`).join('')}
-    </table>
-  </div>`;
+  if(adminTab==='users')return panel('Users',`<table class="data-table"><tr><th>Name</th><th>Phone</th><th>Role</th><th>Joined</th></tr>${db.profiles.map(p=>`<tr><td>${esc(p.full_name||'—')}</td><td>${esc(p.phone||'—')}</td><td>${chip(p.role)}</td><td>${date(p.created_at)}</td></tr>`).join('')}</table>`);
+  if(adminTab==='sellers')return panel('Sellers',`<table class="data-table"><tr><th>Business</th><th>Location</th><th>Rating</th><th>Status</th></tr>${db.sellers.map(s=>`<tr><td>${esc(s.business_name)}</td><td>${esc(s.location||'—')}</td><td>${esc(s.rating||'—')} ★</td><td>${chip(s.status|| (s.verified?'approved':'pending'))}</td></tr>`).join('')}</table>`);
+  if(adminTab==='products')return panel('Products',`<table class="data-table"><tr><th>Product</th><th>Brand</th><th>Price</th><th>Stock</th><th>Status</th></tr>${db.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.brand||'—')}</td><td>${money(p.price)}</td><td>${p.stock}</td><td>${chip(p.is_active?'active':'inactive')}</td></tr>`).join('')}</table>`);
+  if(adminTab==='categories')return panel('Categories',`<table class="data-table"><tr><th>Category</th><th>Products</th><th>Status</th></tr>${db.categories.map(c=>`<tr><td>${esc(c.icon||'')} ${esc(c.name)}</td><td>${c.product_count||0}</td><td>${chip(c.is_active?'active':'inactive')}</td></tr>`).join('')}</table>`);
+  if(['orders','payments','refunds'].includes(adminTab))return orderPanel();
+  if(adminTab==='reviews')return panel('Reviews',`<table class="data-table"><tr><th>Rating</th><th>Review</th><th>Approved</th><th>Date</th></tr>${db.reviews.map(r=>`<tr><td>${r.rating} ★</td><td>${esc(r.review_text||'')}</td><td>${chip(r.is_approved?'approved':'pending')}</td><td>${date(r.created_at)}</td></tr>`).join('')}</table>`);
+  if(adminTab==='coupons')return panel('Coupons',`<p class="muted">Coupons are managed in Supabase. This dashboard keeps the coupon section available without duplicating catalog data.</p>`);
+  if(adminTab==='banners')return panel('Homepage Banners',`<p class="muted">Banner management remains a presentation feature. No fake analytics are shown here.</p>`);
+  if(adminTab==='reports')return panel('Reports',`<p class="muted">Current database totals and revenue are shown on the dashboard. Export functionality can be added without using placeholder figures.</p>`);
+  if(adminTab==='settings')return panel('Settings',`<p class="muted">Admin authentication is enforced through the Supabase profile role. Website configuration is not stored as fake local settings.</p>`);
+  const revenue=db.orders.reduce((a,o)=>a+Number(o.total||0),0),pending=db.orders.filter(o=>!['delivered','cancelled','refunded'].includes(o.status)).length,paid=db.payments.filter(p=>p.status==='paid').length,low=db.products.filter(p=>p.is_active&&Number(p.stock)<15).length;
+  return `<div class="stat-grid"><div class="stat-card"><div class="val">${db.profiles.length}</div><div class="lbl">Real Users</div></div><div class="stat-card"><div class="val">${db.sellers.length}</div><div class="lbl">Real Sellers</div></div><div class="stat-card"><div class="val">${db.products.length}</div><div class="lbl">Real Products</div></div><div class="stat-card"><div class="val">${db.orders.length}</div><div class="lbl">Real Orders</div></div><div class="stat-card"><div class="val">${paid}</div><div class="lbl">Paid Payments</div></div><div class="stat-card"><div class="val">${money(revenue)}</div><div class="lbl">Order Revenue</div></div><div class="stat-card"><div class="val">${pending}</div><div class="lbl">Pending Orders</div></div><div class="stat-card"><div class="val">${low}</div><div class="lbl">Low Stock (&lt;15)</div></div></div>${panel('Recent Orders',recentOrders())}`;
 }
+function panel(title,body){return `<div class="panel-card"><h3>${title}</h3>${body||'<p class="muted">No records found.</p>'}</div>`}
+function recentOrders(){return `<table class="data-table"><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Created</th></tr>${db.orders.slice(0,10).map(o=>`<tr><td>${esc(o.order_number||o.id.slice(0,8))}</td><td>${esc((db.profiles.find(p=>p.id===o.user_id)||{}).full_name||'Customer')}</td><td>${money(o.total)}</td><td>${chip(o.status)}</td><td>${date(o.created_at)}</td></tr>`).join('')}</table>`}
+function orderPanel(){
+  if(adminTab==='payments'||adminTab==='refunds'){
+    const rows=adminTab==='refunds'?db.payments.filter(p=>p.status==='refunded'):db.payments;
+    return panel(adminTab==='refunds'?'Refunded Payments':'Payments',`<table class="data-table"><tr><th>Order</th><th>Amount</th><th>Method</th><th>Razorpay</th><th>Status</th><th>Date</th></tr>${rows.map(p=>`<tr><td>${esc((db.orders.find(o=>o.id===p.order_id)||{}).order_number||'—')}</td><td>${money(p.amount)}</td><td>${esc(p.method||p.provider||'—')}</td><td>${esc(p.razorpay_payment_id||p.razorpay_order_id||'—')}</td><td>${chip(p.status)}</td><td>${date(p.paid_at||p.created_at)}</td></tr>`).join('')}</table>`);
+  }
+  return panel('Orders',`<table class="data-table"><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th>Update</th></tr>${db.orders.map(o=>{const pay=db.payments.find(p=>p.order_id===o.id);return `<tr><td>${esc(o.order_number||o.id.slice(0,8))}<br><small>${date(o.created_at)}</small></td><td>${esc((db.profiles.find(p=>p.id===o.user_id)||{}).full_name||'Customer')}</td><td>${money(o.total)}</td><td>${chip(pay?.status||'—')}</td><td>${chip(o.status)}</td><td><select onchange="updateOrderStatus('${o.id}',this.value)"><option value="">Change…</option>${['pending','confirmed','processing','shipped','delivered','cancelled','refunded'].map(s=>`<option value="${s}">${s}</option>`).join('')}</select></td></tr>`}).join('')}</table>`);
+}
+async function updateOrderStatus(id,status){if(!status)return;try{const {error}=await window.agriSupabase.from('orders').update({status,updated_at:new Date().toISOString()}).eq('id',id);if(error)throw error;toast('Order status updated.');await loadAdminData();renderAdminContent();}catch(e){console.error(e);toast(e.message||'Unable to update order.');}}
 </script>
 </body>
 </html>
