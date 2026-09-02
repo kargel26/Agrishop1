@@ -1,0 +1,9 @@
+{
+  "name": "agrimart",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0",
+    "razorpay": "^2.9.6"
+  }
+}

@@ -1,0 +1,60 @@
+const Razorpay = require('razorpay');
+const { createClient } = require('@supabase/supabase-js');
+
+const SUPABASE_URL = 'https://ggrypjuwwmiisgtgpozj.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_u12UwcUj8vGHAdo-Lex5kg_ve7PzPxh';
+
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    if (!token) return res.status(401).json({ error: 'Authentication required' });
+
+    // Use the same Supabase project as the frontend. A service-role key is
+    // preferred on the server so payment initialization is not blocked by RLS;
+    // ownership is still checked explicitly against the authenticated user.
+    const dbKey = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_PUBLISHABLE_KEY;
+    const supabase = createClient(SUPABASE_URL, dbKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } }
+    });
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) return res.status(401).json({ error: 'Invalid session' });
+
+    const { orderId } = req.body || {};
+    if (!orderId) return res.status(400).json({ error: 'orderId is required' });
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('id,order_number,total,status,user_id')
+      .eq('id', orderId)
+      .maybeSingle();
+    if (orderError) {
+      console.error('Order lookup error:', orderError);
+      return res.status(500).json({ error: 'Could not load order' });
+    }
+    if (!order || order.user_id !== user.id) return res.status(404).json({ error: 'Order not found' });
+    if (!['pending','confirmed'].includes(order.status)) return res.status(400).json({ error: 'Order is not payable' });
+
+    const amount = Math.round(Number(order.total) * 100);
+    if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ error: 'Invalid order amount' });
+
+    const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
+    const rzpOrder = await razorpay.orders.create({ amount, currency: 'INR', receipt: order.order_number, notes: { supabase_order_id: order.id, user_id: user.id } });
+
+    const { error: paymentError } = await supabase.from('payments').upsert({
+      order_id: order.id,
+      user_id: user.id,
+      provider: 'razorpay',
+      razorpay_order_id: rzpOrder.id,
+      amount: Number(order.total),
+      status: 'created'
+    }, { onConflict: 'order_id' });
+    if (paymentError) return res.status(500).json({ error: 'Could not initialize payment' });
+
+    return res.status(200).json({ id: rzpOrder.id, amount: rzpOrder.amount, currency: rzpOrder.currency, key: process.env.RAZORPAY_KEY_ID });
+  } catch (error) {
+    console.error('Razorpay create-order error:', error);
+    return res.status(500).json({ error: 'Payment initialization failed' });
+  }
+};
