@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contact & Support — AgriMart</title>
+<meta name="description" content="Contact AgriMart support for orders, agricultural products, seller queries and general assistance.">
+<link rel="canonical" href="https://agrishop1.vercel.app/contact.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
@@ -15,26 +17,41 @@
 <main>
   <div class="container" style="max-width:900px;">
     <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span class="cur">Contact</span></div>
-    <h2 style="font-size:28px;margin-bottom:6px;">Contact &amp; Support</h2>
+    <h1 style="font-size:28px;margin-bottom:6px;">Contact &amp; Support</h1>
     <p class="muted" style="margin-bottom:26px;">We're here to help with orders, products, or seller queries.</p>
     <div class="cart-layout" style="grid-template-columns:1fr 1fr;">
       <div class="panel-card" style="margin:0;">
-        <h3>Send us a message</h3>
-        <div class="form-grid">
-          <div class="form-field"><label>Your Name</label><input placeholder="Full name"></div>
-          <div class="form-field"><label>Mobile / Email</label><input placeholder="Contact detail"></div>
-          <div class="form-field full"><label>Subject</label><input placeholder="How can we help?"></div>
-          <div class="form-field full"><label>Message</label><textarea rows="4" placeholder="Describe your query…"></textarea></div>
-        </div>
-        <button class="btn btn-primary" style="margin-top:14px;" onclick="submitContact(event)">Send Message</button>
+        <h2 style="font-size:20px;">Send us a message</h2>
+        <form id="contactForm" novalidate>
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="contactName">Your Name</label>
+              <input id="contactName" name="name" autocomplete="name" required maxlength="100" placeholder="Full name">
+            </div>
+            <div class="form-field">
+              <label for="contactDetail">Mobile / Email</label>
+              <input id="contactDetail" name="contact" autocomplete="email" required maxlength="150" placeholder="Mobile number or email">
+            </div>
+            <div class="form-field full">
+              <label for="contactSubject">Subject</label>
+              <input id="contactSubject" name="subject" required maxlength="200" placeholder="How can we help?">
+            </div>
+            <div class="form-field full">
+              <label for="contactMessage">Message</label>
+              <textarea id="contactMessage" name="message" rows="5" required maxlength="5000" placeholder="Describe your query…"></textarea>
+            </div>
+          </div>
+          <p id="contactFormStatus" class="muted" role="status" aria-live="polite" style="min-height:20px;margin:10px 0 0;"></p>
+          <button id="contactSubmit" class="btn btn-primary" type="submit" style="margin-top:8px;">Send Message</button>
+        </form>
       </div>
       <div>
         <div class="panel-card">
-          <h3>Get in Touch</h3>
+          <h2 style="font-size:20px;">Get in Touch</h2>
           <p id="contactDetails" style="font-size:13.5px;line-height:2;"></p>
         </div>
         <div class="panel-card">
-          <h3>Frequently Asked Questions</h3>
+          <h2 style="font-size:20px;">Frequently Asked Questions</h2>
           <div style="font-size:13.5px;">
             <p style="margin-bottom:10px;"><b>How long does delivery take?</b><br><span class="muted">Typically 3–5 business days depending on your location.</span></p>
             <p style="margin-bottom:10px;"><b>What payment methods are accepted?</b><br><span class="muted">UPI, credit/debit cards, net banking and wallets via Razorpay.</span></p>
@@ -48,6 +65,8 @@
 
 <div id="site-footer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/supabase-client.js"></script>
 <script src="assets/data.js"></script>
 <script src="assets/common.js"></script>
 <script>
@@ -55,7 +74,51 @@ function initPage(){
   document.getElementById('contactDetails').innerHTML =
     `📞 ${CONTACT.phone}<br>✉️ ${CONTACT.email}<br>📍 ${CONTACT.address}<br>🕒 Mon–Sat, 9:00 AM – 7:00 PM`;
 }
-function submitContact(e){ e.preventDefault(); toast('Message sent! Our team will respond within 24 hours.'); }
+
+async function submitContact(e){
+  e.preventDefault();
+  const form = e.currentTarget;
+  const status = document.getElementById('contactFormStatus');
+  const button = document.getElementById('contactSubmit');
+  const values = Object.fromEntries(new FormData(form).entries());
+  const name = String(values.name || '').trim();
+  const contact = String(values.contact || '').trim();
+  const subject = String(values.subject || '').trim();
+  const message = String(values.message || '').trim();
+
+  if(name.length < 2 || contact.length < 3 || subject.length < 2 || message.length < 5){
+    status.textContent = 'Please complete all fields before sending.';
+    return;
+  }
+  if(!window.agriSupabase){
+    status.textContent = 'Contact service is temporarily unavailable. Please try again shortly.';
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = 'Sending…';
+  status.textContent = '';
+
+  try {
+    const { data: { user } } = await window.agriSupabase.auth.getUser();
+    const { error } = await window.agriSupabase.from('contact_messages').insert({
+      name, contact, subject, message, user_id: user ? user.id : null
+    });
+    if(error) throw error;
+
+    form.reset();
+    status.textContent = 'Message sent successfully. Our team will respond within 24 hours.';
+    if(typeof toast === 'function') toast('Message sent successfully!');
+  } catch(error) {
+    console.error('Contact form submission failed:', error);
+    status.textContent = 'Unable to send your message right now. Please try again.';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Send Message';
+  }
+}
+
+document.getElementById('contactForm').addEventListener('submit', submitContact);
 </script>
 </body>
 </html>
