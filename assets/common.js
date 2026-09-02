@@ -1,7 +1,7 @@
 /* AgriMart shared header/footer */
 /* Admin-only extensions are loaded before admin.html's inline controller script. */
 if(document.body&&document.body.getAttribute('data-page')==='admin'){
-  document.write('<script src="/assets/admin-contact.js"><\\/script>');
+  document.write('<script src="/assets/admin-contact.js"></'+'script>');
 }
 function renderHeader(){
   const el=document.getElementById('site-header');
