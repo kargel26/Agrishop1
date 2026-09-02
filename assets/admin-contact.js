@@ -77,12 +77,18 @@
       adminTab=t;
       document.querySelectorAll('#adminMenu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===t));
       window.renderAdminContent();
-      if(t==='contact-messages'&&!messages.length)refresh();
+      if(t==='contact-messages')refresh();
     };
     window.refreshContactMessages=refresh;
     window.updateContactMessageStatus=updateStatus;
     window.filterContactMessages=s=>{filter=s;window.renderAdminContent();};
     menuLink();
+    const menu=document.getElementById('adminMenu');
+    if(menu&&!menu.__contactObserver){
+      const observer=new MutationObserver(()=>menuLink());
+      observer.observe(menu,{childList:true});
+      menu.__contactObserver=observer;
+    }
     load().then(()=>{updateBadge();if(typeof adminTab!=='undefined'&&adminTab==='contact-messages')window.renderAdminContent();}).catch(e=>console.warn('Contact messages load failed',e));
   }
   function boot(){
