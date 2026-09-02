@@ -54,7 +54,7 @@
     </div>`;
   }
   async function refresh(){
-    try{await load(); if(window.adminTab==='contact-messages') window.renderAdminContent();}
+    try{await load(); if(typeof adminTab!=='undefined'&&adminTab==='contact-messages') window.renderAdminContent();}
     catch(e){alert('Unable to load contact messages: '+(e.message||e));}
   }
   async function updateStatus(id,status){
@@ -69,28 +69,26 @@
     }catch(e){alert('Unable to update message status: '+(e.message||e)); window.renderAdminContent();}
   }
   function install(){
-    if(!window.agriSupabase||!window.adminMenu)return;
+    if(!window.agriSupabase||!document.getElementById('adminMenu'))return;
     const original=window.adminContent;
     if(typeof original!=='function')return;
-    window.adminContent=function(){return window.adminTab==='contact-messages'?panel():original();};
-    const originalSet=window.setAdminTab;
+    window.adminContent=function(){return typeof adminTab!=='undefined'&&adminTab==='contact-messages'?panel():original();};
     window.setAdminTab=function(t){
-      window.adminTab=t;
+      adminTab=t;
       document.querySelectorAll('#adminMenu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===t));
       window.renderAdminContent();
       if(t==='contact-messages'&&!messages.length)refresh();
     };
-    window.renderAdminContent=window.renderAdminContent||function(){document.getElementById('adminContent').innerHTML=window.adminContent();};
     window.refreshContactMessages=refresh;
     window.updateContactMessageStatus=updateStatus;
     window.filterContactMessages=s=>{filter=s;window.renderAdminContent();};
     menuLink();
-    load().then(()=>{updateBadge();if(window.adminTab==='contact-messages')window.renderAdminContent();}).catch(e=>console.warn('Contact messages load failed',e));
+    load().then(()=>{updateBadge();if(typeof adminTab!=='undefined'&&adminTab==='contact-messages')window.renderAdminContent();}).catch(e=>console.warn('Contact messages load failed',e));
   }
   function boot(){
     let tries=0; const timer=setInterval(()=>{
       tries++;
-      if(window.adminTab&&window.adminContent&&document.getElementById('adminMenu')){clearInterval(timer);install();}
+      if(typeof window.adminContent==='function'&&typeof window.renderAdminContent==='function'&&document.getElementById('adminMenu')){clearInterval(timer);install();}
       else if(tries>80)clearInterval(timer);
     },100);
   }
