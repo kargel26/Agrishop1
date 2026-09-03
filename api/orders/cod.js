@@ -1,11 +1,15 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ggrypjuwwmiisgtgpozj.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_u12UwcUj8vGHAdo-Lex5kg_ve7PzPxh';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return res.status(500).json({ error: 'Supabase server configuration is missing' });
+    }
+
     const auth = req.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ error: 'Authentication required' });
