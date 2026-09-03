@@ -1,12 +1,16 @@
 const Razorpay = require('razorpay');
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ggrypjuwwmiisgtgpozj.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_u12UwcUj8vGHAdo-Lex5kg_ve7PzPxh';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return res.status(500).json({ error: 'Supabase server configuration is missing' });
+    }
+
     const auth = req.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
     if (!token) return res.status(401).json({ error: 'Authentication required' });
@@ -32,7 +36,6 @@ module.exports = async function handler(req, res) {
     if (!order || order.user_id !== user.id) return res.status(404).json({ error: 'Order not found' });
     if (!['pending','confirmed'].includes(order.status)) return res.status(400).json({ error: 'Order is not payable' });
 
-    // Never start a second Razorpay payment for an order that is already paid.
     const { data: existingPayment, error: existingPaymentError } = await supabase
       .from('payments')
       .select('status,razorpay_order_id,razorpay_payment_id,amount')
@@ -44,8 +47,6 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: 'This order has already been paid', paid: true, razorpay_payment_id: existingPayment.razorpay_payment_id });
     }
 
-    // A confirmed order with an unpaid payment row is an inconsistent state.
-    // Normalize it before creating/recreating the Razorpay checkout.
     if (order.status === 'confirmed') {
       const { error: normalizeError } = await supabase
         .from('orders')
@@ -57,6 +58,10 @@ module.exports = async function handler(req, res) {
 
     const amount = Math.round(Number(order.total) * 100);
     if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ error: 'Invalid order amount' });
+
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ error: 'Razorpay server configuration is missing' });
+    }
 
     const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
     const rzpOrder = await razorpay.orders.create({
