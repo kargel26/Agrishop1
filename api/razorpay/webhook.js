@@ -64,20 +64,16 @@ module.exports = async function handler(req, res) {
   if (paymentLookupError) return res.status(500).json({ error: paymentLookupError.message });
   if (!paymentRow) return res.status(200).json({ received: true, ignored: true });
 
-  const update = {
-    status: paymentStatus,
-    razorpay_payment_id: payment?.id || null,
-    method: payment?.method || null,
-    updated_at: new Date().toISOString()
-  };
-  if (isPaid) update.paid_at = new Date().toISOString();
-
-  const { error: updateError } = await supabase.from('payments').update(update).eq('id', paymentRow.id);
-  if (updateError) return res.status(500).json({ error: updateError.message });
-
-  if (paymentStatus === 'paid') {
-    await supabase.from('orders').update({ status: 'confirmed', updated_at: new Date().toISOString() }).eq('id', paymentRow.order_id).eq('status', 'pending');
-  }
+  const amount = payment?.amount == null ? null : Number(payment.amount) / 100;
+  const { data: finalized, error: finalizeError } = await supabase.rpc('finalize_razorpay_webhook_payment', {
+    p_razorpay_order_id: rzpOrderId,
+    p_razorpay_payment_id: payment?.id || null,
+    p_method: payment?.method || null,
+    p_amount: amount,
+    p_payment_status: paymentStatus
+  });
+  if (finalizeError) return res.status(500).json({ error: finalizeError.message });
+  if (!finalized?.processed) return res.status(200).json({ received: true, ignored: true });
 
   if (eventId) {
     const { error: eventError } = await supabase.from('payment_webhook_events').insert({
