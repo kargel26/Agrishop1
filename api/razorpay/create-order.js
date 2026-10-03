@@ -57,17 +57,26 @@ module.exports = async function handler(req, res) {
     // Reuse an existing Razorpay order for this database order when the
     // payment is still awaiting checkout. This makes repeated clicks/retries
     // idempotent and avoids creating multiple Razorpay orders for one order.
+    const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
     if (existingPayment?.status === 'created' && existingPayment.razorpay_order_id &&
         Math.round(Number(existingPayment.amount) * 100) === amount) {
-      return res.status(200).json({
-        id: existingPayment.razorpay_order_id,
-        amount,
-        currency: 'INR',
-        key: process.env.RAZORPAY_KEY_ID
-      });
+      try {
+        const existingRzpOrder = await razorpay.orders.fetch(existingPayment.razorpay_order_id);
+        if (Number(existingRzpOrder.amount) === amount && existingRzpOrder.currency === 'INR') {
+          return res.status(200).json({
+            id: existingRzpOrder.id,
+            amount: existingRzpOrder.amount,
+            currency: existingRzpOrder.currency,
+            key: process.env.RAZORPAY_KEY_ID
+          });
+        }
+      } catch (lookupError) {
+        // The stored Razorpay order may have expired or no longer exist.
+        // Fall through and create a replacement order for this DB order.
+        console.warn('Stored Razorpay order is unavailable; creating a replacement:', lookupError?.message || lookupError);
+      }
     }
 
-    const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
     const rzpOrder = await razorpay.orders.create({
       amount,
       currency: 'INR',
