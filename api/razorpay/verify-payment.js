@@ -40,7 +40,7 @@ module.exports = async function handler(req, res) {
     const { data: order, error: orderError } = await supabase.from('orders')
       .select('id,total,status').eq('id', orderId).eq('user_id', user.id).maybeSingle();
     if (orderError || !order) return res.status(404).json({ error: 'Order not found' });
-    if (payment.status === 'paid') return res.status(200).json({ verified: true, orderId });
+    if (payment.status === 'paid') return res.status(200).json({ verified: true, orderId, orderStatus: order.status });
     if (order.status !== 'pending') return res.status(409).json({ error: 'Order is no longer pending' });
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
       return res.status(500).json({ error: 'Razorpay is not configured' });
@@ -59,12 +59,15 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: 'Payment amount, order, or capture status mismatch' });
     }
 
-    const { error: updateError } = await supabase.from('payments').update({ razorpay_payment_id, razorpay_signature, status: 'paid', paid_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', payment.id).eq('user_id', user.id);
-    if (updateError) return res.status(500).json({ error: 'Could not update payment' });
-    const { error: orderUpdateError } = await supabase.from('orders').update({ status: 'confirmed', updated_at: new Date().toISOString() }).eq('id', orderId).eq('user_id', user.id);
-    if (orderUpdateError) return res.status(500).json({ error: 'Payment verified but order update failed' });
+    const { data: finalized, error: finalizeError } = await supabase.rpc('finalize_razorpay_payment', {
+      p_order_id: orderId,
+      p_razorpay_payment_id: razorpay_payment_id,
+      p_razorpay_signature: razorpay_signature,
+      p_amount: Number(order.total)
+    });
+    if (finalizeError) return res.status(409).json({ error: finalizeError.message || 'Could not finalize payment' });
 
-    return res.status(200).json({ verified: true, orderId });
+    return res.status(200).json(finalized || { verified: true, orderId });
   } catch (error) {
     console.error('Razorpay verify-payment error:', error);
     return res.status(500).json({ error: 'Payment verification failed' });
