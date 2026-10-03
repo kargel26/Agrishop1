@@ -27,7 +27,7 @@ begin
  for v_item in select value from jsonb_array_elements(p_items) loop
   v_product_id:=(v_item->>'product_id')::uuid; v_qty:=(v_item->>'quantity')::integer;
   select * into v_product from public.products where id=v_product_id for update;
-  insert into public.order_items(order_id,product_id,seller_id,product_name,unit_price,quantity,line_total) values(v_order.id,v_product.id,v_product.seller_id,v_product.name,v_product.price,v_qty,coalesce(v_product.price,0)*v_qty);
+  insert into public.order_items(order_id,product_id,seller_id,product_name,unit_price,quantity) values(v_order.id,v_product.id,v_product.seller_id,v_product.name,v_product.price,v_qty);
   update public.products set stock=stock-v_qty where id=v_product.id;
  end loop;
  return jsonb_build_object('order',jsonb_build_object('id',v_order.id,'order_number',v_order.order_number,'user_id',v_order.user_id,'address_id',v_order.address_id,'status',v_order.status,'subtotal',v_order.subtotal,'discount',v_order.discount,'delivery_fee',v_order.delivery_fee,'tax',v_order.tax,'total',v_order.total,'created_at',v_order.created_at,'updated_at',v_order.updated_at),'orderItems',(select coalesce(jsonb_agg(jsonb_build_object('product_id',oi.product_id,'seller_id',oi.seller_id,'product_name',oi.product_name,'unit_price',oi.unit_price,'quantity',oi.quantity,'line_total',oi.line_total)),'[]'::jsonb) from public.order_items oi where oi.order_id=v_order.id));
