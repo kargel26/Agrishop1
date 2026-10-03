@@ -8,8 +8,12 @@
     const btn=document.querySelector('[data-track-save="'+id+'"]');
     if(btn){btn.disabled=true;btn.textContent='Saving…';}
     try{
-      const r=await window.agriSupabase.from('orders').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+      const now=new Date().toISOString();
+      const r=await window.agriSupabase.from('orders').update({status,updated_at:now}).eq('id',id);
       if(r.error)throw r.error;
+      const title={pending:'Order placed',confirmed:'Order confirmed',processing:'Preparing your order',shipped:'Order shipped',delivered:'Order delivered',cancelled:'Order cancelled',refunded:'Order refunded'}[status]||status;
+      const event=await window.agriSupabase.from('order_tracking_events').insert({order_id:id,status,title,description:'Delivery status updated by admin.',created_at:now});
+      if(event.error)console.warn('Tracking event could not be recorded:',event.error.message);
       if(typeof loadAdminData==='function')await loadAdminData();
       if(typeof renderAdminContent==='function')renderAdminContent();
       setTimeout(render,100);
