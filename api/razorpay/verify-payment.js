@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
+const Razorpay = require('razorpay');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -35,12 +36,38 @@ module.exports = async function handler(req, res) {
     const b = Buffer.from(razorpay_signature, 'utf8');
     if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(400).json({ error: 'Payment signature verification failed' });
 
-    const { error: updateError } = await supabase.from('payments').update({ razorpay_payment_id, razorpay_signature, status: 'paid', paid_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', payment.id).eq('user_id', user.id);
-    if (updateError) return res.status(500).json({ error: 'Could not update payment' });
-    const { error: orderUpdateError } = await supabase.from('orders').update({ status: 'confirmed', updated_at: new Date().toISOString() }).eq('id', orderId).eq('user_id', user.id);
-    if (orderUpdateError) return res.status(500).json({ error: 'Payment verified but order update failed' });
+    // A valid checkout signature alone does not establish captured funds or the amount.
+    const { data: order, error: orderError } = await supabase.from('orders')
+      .select('id,total,status').eq('id', orderId).eq('user_id', user.id).maybeSingle();
+    if (orderError || !order) return res.status(404).json({ error: 'Order not found' });
+    if (payment.status === 'paid') return res.status(200).json({ verified: true, orderId, orderStatus: order.status });
+    if (order.status !== 'pending') return res.status(409).json({ error: 'Order is no longer pending' });
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ error: 'Razorpay is not configured' });
+    }
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+    const remote = await razorpay.payments.fetch(razorpay_payment_id);
+    const expectedAmount = Math.round(Number(order.total) * 100);
+    if (!Number.isSafeInteger(expectedAmount) || expectedAmount <= 0 ||
+        remote.order_id !== razorpay_order_id || remote.currency !== 'INR' ||
+        Number(remote.amount) !== expectedAmount ||
+        Math.round(Number(payment.amount) * 100) !== expectedAmount ||
+        remote.status !== 'captured') {
+      return res.status(409).json({ error: 'Payment amount, order, or capture status mismatch' });
+    }
 
-    return res.status(200).json({ verified: true, orderId });
+    const { data: finalized, error: finalizeError } = await supabase.rpc('finalize_razorpay_payment', {
+      p_order_id: orderId,
+      p_razorpay_payment_id: razorpay_payment_id,
+      p_razorpay_signature: razorpay_signature,
+      p_amount: Number(order.total)
+    });
+    if (finalizeError) return res.status(409).json({ error: finalizeError.message || 'Could not finalize payment' });
+
+    return res.status(200).json(finalized || { verified: true, orderId });
   } catch (error) {
     console.error('Razorpay verify-payment error:', error);
     return res.status(500).json({ error: 'Payment verification failed' });
