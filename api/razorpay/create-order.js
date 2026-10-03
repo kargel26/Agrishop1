@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Could not load order' });
     }
     if (!order || order.user_id !== user.id) return res.status(404).json({ error: 'Order not found' });
-    if (!['pending','confirmed'].includes(order.status)) return res.status(400).json({ error: 'Order is not payable' });
+    if (order.status !== 'pending') return res.status(400).json({ error: 'Order is not payable' });
 
     const { data: existingPayment, error: existingPaymentError } = await supabase
       .from('payments')
@@ -47,20 +47,24 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: 'This order has already been paid', paid: true, razorpay_payment_id: existingPayment.razorpay_payment_id });
     }
 
-    if (order.status === 'confirmed') {
-      const { error: normalizeError } = await supabase
-        .from('orders')
-        .update({ status: 'pending', updated_at: new Date().toISOString() })
-        .eq('id', order.id)
-        .eq('user_id', user.id);
-      if (normalizeError) return res.status(500).json({ error: 'Could not reset unpaid order' });
-    }
-
     const amount = Math.round(Number(order.total) * 100);
     if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ error: 'Invalid order amount' });
 
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
       return res.status(500).json({ error: 'Razorpay server configuration is missing' });
+    }
+
+    // Reuse an existing Razorpay order for this database order when the
+    // payment is still awaiting checkout. This makes repeated clicks/retries
+    // idempotent and avoids creating multiple Razorpay orders for one order.
+    if (existingPayment?.status === 'created' && existingPayment.razorpay_order_id &&
+        Math.round(Number(existingPayment.amount) * 100) === amount) {
+      return res.status(200).json({
+        id: existingPayment.razorpay_order_id,
+        amount,
+        currency: 'INR',
+        key: process.env.RAZORPAY_KEY_ID
+      });
     }
 
     const razorpay = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
