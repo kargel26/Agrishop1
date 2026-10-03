@@ -12,6 +12,9 @@ begin
      update public.products p set stock=p.stock+oi.quantity,updated_at=now()
      from public.order_items oi where oi.order_id=v_order.id and oi.product_id=p.id;
    end if;
+   if v_order.coupon_reserved and v_order.coupon_id is not null then
+     update public.coupons set used_count=greatest(0,used_count-1) where id=v_order.coupon_id;
+   end if;
    update public.orders set stock_reserved=false,coupon_reserved=false,status='cancelled',updated_at=now() where id=v_order.id;
  else
    update public.orders set status=p_status,updated_at=now() where id=v_order.id;
