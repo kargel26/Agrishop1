@@ -58,16 +58,23 @@ module.exports = async function handler(req, res) {
 
   const { data: paymentRow, error: paymentLookupError } = await supabase
     .from('payments')
-    .select('id,order_id,status')
+    .select('id,order_id,status,razorpay_payment_id')
     .eq('razorpay_order_id', rzpOrderId)
     .maybeSingle();
   if (paymentLookupError) return res.status(500).json({ error: paymentLookupError.message });
   if (!paymentRow) return res.status(200).json({ received: true, ignored: true });
 
-  const amount = payment?.amount == null ? null : Number(payment.amount) / 100;
+  const orderEntity = event.payload?.order?.entity;
+  const amount = payment?.amount != null
+    ? Number(payment.amount) / 100
+    : orderEntity?.amount_paid != null
+      ? Number(orderEntity.amount_paid) / 100
+      : orderEntity?.amount != null
+        ? Number(orderEntity.amount) / 100
+        : null;
   const { data: finalized, error: finalizeError } = await supabase.rpc('finalize_razorpay_webhook_payment', {
     p_razorpay_order_id: rzpOrderId,
-    p_razorpay_payment_id: payment?.id || null,
+    p_razorpay_payment_id: payment?.id || paymentRow.razorpay_payment_id || null,
     p_method: payment?.method || null,
     p_amount: amount,
     p_payment_status: paymentStatus
